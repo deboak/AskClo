@@ -3,7 +3,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import routes from "./routes/routes"
-import { errorHandler } from "./middlewares/errorhandler";
+import { errorHandler } from "./middlewares/errorHandler";
 
 
 const app = express();

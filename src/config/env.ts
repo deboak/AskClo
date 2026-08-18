@@ -23,7 +23,8 @@ function normalizeBaseUrl(value: string | undefined): string {
 export const AppEnv = {
   PORT: process.env.PORT,
   DB_URL: process.env.DB_URL,
-  JWT_SECRET: process.env.JWT_SECRET,
+  JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET,
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
   NODE_ENV: process.env.NODE_ENV || "development",
   RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS,
