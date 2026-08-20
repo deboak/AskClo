@@ -6,7 +6,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
-    "db:new": "tsx ./node_modules/knex/bin/cli.js migrate:make --knexfile src/config/knexfile.ts --extension ts",
+    "db:new": "tsx ./node_modules/knex/bin/cli.js migrate:make --knexfile src/config/knexfile.ts -x ts",
     "db:migrate": "tsx ./node_modules/knex/bin/cli.js migrate:latest --knexfile src/config/knexfile.ts",
     "db:rollback": "tsx ./node_modules/knex/bin/cli.js migrate:rollback --knexfile src/config/knexfile.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -21,6 +21,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
     "helmet": "^8.3.0",
     "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
@@ -29,6 +30,7 @@
     "objection": "^3.1.5",
     "pg": "^8.22.0",
     "pino": "^10.3.1",
+    "rate-limit-redis": "^6.0.1",
     "redis": "^6.2.1",
     "zod": "^4.4.3"
   },
