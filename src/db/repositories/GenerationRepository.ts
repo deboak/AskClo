@@ -47,6 +47,26 @@ export class GenerationRepository extends BaseRepository<GenerationModel> {
     return Number(result?.count ?? 0);
   }
 
+  async countReservedByUserSince(userId: string, since: Date | string): Promise<number> {
+    return this.countReservedByUserSinceInTrx(userId, since);
+  }
+
+  async countReservedByUserSinceInTrx(
+    userId: string,
+    since: Date | string,
+    trx?: Transaction,
+  ): Promise<number> {
+    const result = (await this.model
+      .query(trx)
+      .where("user_id", userId)
+      .whereIn("status", ["pending", "processing", "completed"])
+      .where("created_at", ">=", since instanceof Date ? since.toISOString() : since)
+      .count("id as count")
+      .first()) as unknown as { count?: string | number } | undefined;
+
+    return Number(result?.count ?? 0);
+  }
+
   async createInTrx(data: Partial<GenerationModel>, trx: Transaction): Promise<GenerationModel> {
     return this.model.query(trx).insertAndFetch(data) as unknown as Promise<GenerationModel>;
   }

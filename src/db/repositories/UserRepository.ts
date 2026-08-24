@@ -32,6 +32,16 @@ export class UserRepository extends BaseRepository<UserModel> {
   async createInTrx(data: Partial<UserModel>, trx: Transaction): Promise<UserModel> {
     return this.model.query(trx).insertAndFetch(data) as unknown as Promise<UserModel>;
   }
+
+  async updateByIdInTrx(
+    userId: string,
+    data: Partial<UserModel>,
+    trx: Transaction,
+  ): Promise<UserModel> {
+    return this.model
+      .query(trx)
+      .patchAndFetchById(userId, data) as unknown as Promise<UserModel>;
+  }
 }
 
 export const userRepository = new UserRepository();

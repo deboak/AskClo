@@ -2,10 +2,15 @@ import bcrypt from "bcrypt";
 import { UserModel } from "../../db/models/User";
 import { UserRepository, userRepository } from "../../db/repositories/UserRepository";
 import { AppError } from "../../utils/appError";
-import { signAccessToken, signRefreshToken } from "../../utils/jwt";
+import { signAccessToken, signRefreshToken, verifyRefreshToken, getRefreshTtlSeconds } from "../../utils/jwt";
 import { normalizeNigerianPhoneNumber } from "../../utils/phoneNumber";
 import { OtpStore, otpStore } from "./otp.store";
 import { TermiiService, termiiService } from "./termii.service";
+import { subscriptionService } from "../subscription/subscription.service";
+import { db } from "../../config/db";
+import { redis } from "../../config/redis";
+import { queueOtpJob } from "../../queue/jobs/otp";
+import { queueNotificationJob } from "../../queue/jobs/notification";
 
 const PASSWORD_SALT_ROUNDS = 12;
 
@@ -95,7 +100,7 @@ export class AuthService {
     const code = await this.otpStore.create(user.id, "phone");
     if (process.env.NODE_ENV === "production") {
       try {
-        await this.smsService.sendVerificationOtp(phoneNumber, code);
+        await queueOtpJob({ userId: user.id, method: "phone", recipient: phoneNumber, code });
       } catch (error) {
         await this.otpStore.remove(user.id, "phone");
         throw error;
@@ -130,11 +135,61 @@ export class AuthService {
   async completeVerification(userId: string, method: VerificationMethod, code: string) {
     await this.otpStore.verify(userId, method, code);
 
-    const user = await this.userRepo.updateById(userId, {
-      ...(method === "email" ? { email_verified: true } : { phone_verified: true }),
+    const user = await db.transaction(async (trx) => {
+      const verifiedUser = await this.userRepo.updateByIdInTrx(userId, {
+        ...(method === "email" ? { email_verified: true } : { phone_verified: true }),
+      }, trx);
+
+      if (method === "phone") {
+        await subscriptionService.createFreeTrialSubscription(userId, trx);
+      }
+
+      return verifiedUser;
     });
 
     return issueTokens(user);
+  }
+
+  async resendVerificationOtp(userId: string): Promise<void> {
+    const user = await this.userRepo.findById(userId);
+    if (!user?.phone_number) throw new AppError(404, "Account not found");
+    if (user.phone_verified) throw new AppError(400, "Phone number is already verified");
+    const cooldownKey = `auth:otp-resend:${userId}`;
+    if (!(await redis.set(cooldownKey, "1", "EX", 60, "NX"))) {
+      throw new AppError(429, "Please wait before requesting another code");
+    }
+    const code = await this.otpStore.create(userId, "phone");
+    if (process.env.NODE_ENV === "production") await queueOtpJob({ userId, method: "phone", recipient: user.phone_number, code });
+  }
+
+  async refresh(refreshToken: string) {
+    const payload = verifyRefreshToken(refreshToken);
+    if (await redis.get(`auth:revoked-refresh:${payload.sid}`)) throw new AppError(401, "Refresh token has been revoked");
+    const user = await this.userRepo.findById(payload.sub);
+    if (!user || !user.is_active || user.is_deleted || user.is_blocked) throw new AppError(401, "Account is not available");
+    await redis.set(`auth:revoked-refresh:${payload.sid}`, "1", "EX", getRefreshTtlSeconds());
+    return issueTokens(user);
+  }
+
+  async logout(refreshToken: string): Promise<void> {
+    const payload = verifyRefreshToken(refreshToken);
+    await redis.set(`auth:revoked-refresh:${payload.sid}`, "1", "EX", getRefreshTtlSeconds());
+  }
+
+  async requestPasswordReset(email: string): Promise<void> {
+    const user = await this.userRepo.findByEmail(email);
+    if (!user) return;
+    const cooldownKey = `auth:password-reset:${user.id}`;
+    if (!(await redis.set(cooldownKey, "1", "EX", 60, "NX"))) throw new AppError(429, "Please wait before requesting another reset code");
+    const code = await this.otpStore.create(user.id, "email");
+    if (process.env.NODE_ENV === "production") await queueNotificationJob({ userId: user.id, channel: "email", recipient: email, title: "Reset your AskClo password", message: `Your AskClo password reset code is ${code}. It expires in 10 minutes.` });
+  }
+
+  async resetPassword(email: string, code: string, password: string): Promise<void> {
+    const user = await this.userRepo.findByEmail(email);
+    if (!user) throw new AppError(400, "Invalid or expired reset code");
+    await this.otpStore.verify(user.id, "email", code);
+    await this.userRepo.updateById(user.id, { password_hash: await bcrypt.hash(password, PASSWORD_SALT_ROUNDS) });
   }
 }
 

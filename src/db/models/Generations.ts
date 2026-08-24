@@ -14,6 +14,7 @@ export class GenerationModel extends Model {
   type!: GenerationType;
   status!: GenerationStatus;
   input_image_url?: string | null;
+  garment_image_url?: string | null;
   output_image_url?: string | null;
   prompt?: string | null;
   cost_usd?: string | null; // Objection returns decimals as strings by default

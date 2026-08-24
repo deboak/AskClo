@@ -17,6 +17,7 @@ export class ProfileModel extends Model {
     body_type?: string | null;
     age?: string | null;
     cultural_preference?: string | null;
+    photo_url?: string | null;
     created_at!: Date;
     updated_at!: Date;
 

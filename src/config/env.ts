@@ -39,6 +39,12 @@ export const AppEnv = {
   MLRO_EMAILS: process.env.MLRO_EMAILS,
   APP_URL: process.env.APP_URL,
   BASE_URL: normalizeBaseUrl(process.env.BASE_URL),
+  LLM_API_KEY: process.env.LLM_API_KEY || process.env.OPENAI_API_KEY,
+  LLM_MODEL: process.env.LLM_MODEL || "gpt-4o-mini",
+  FAL_KEY: process.env.FAL_KEY,
+  GENERIC_MALE_MODEL_IMAGE_URL: process.env.GENERIC_MALE_MODEL_IMAGE_URL,
+  GENERIC_FEMALE_MODEL_IMAGE_URL: process.env.GENERIC_FEMALE_MODEL_IMAGE_URL,
+  MAX_DAILY_GENERATION_SPEND_USD: process.env.MAX_DAILY_GENERATION_SPEND_USD,
 };
 
 export const Kora = {
@@ -62,6 +68,11 @@ export const StorageEnv = {
   AWS_REGION: process.env.AWS_REGION,
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+  R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
+  R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
+  R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
+  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
+  R2_PUBLIC_BASE_URL: process.env.R2_PUBLIC_BASE_URL,
 };
 
 export const Termii = {
@@ -97,6 +108,9 @@ export const Paystack = {
   PUBLIC_KEY: process.env.PAYSTACK_PUBLIC_KEY,
   BASE_URL: process.env.PAYSTACK_BASE_URL || "https://api.paystack.co",
   WEBHOOK_SECRET: process.env.PAYSTACK_WEBHOOK_SECRET,
+  BASIC_PLAN_CODE: process.env.PAYSTACK_BASIC_PLAN_CODE,
+  PRO_PLAN_CODE: process.env.PAYSTACK_PRO_PLAN_CODE,
+  GOLD_PLAN_CODE: process.env.PAYSTACK_GOLD_PLAN_CODE,
 };
 
 export const WebPush = {

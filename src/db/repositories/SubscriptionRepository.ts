@@ -33,6 +33,13 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionModel> {
     const subscription = await this.findByUserId(userId);
     return subscription ? this.updateById(subscription.id, data) : undefined;
   }
+
+  async findExpiredButActive(now = new Date()): Promise<SubscriptionModel[]> {
+    return this.model
+      .query()
+      .where("status", "active")
+      .where("current_period_end", "<", now.toISOString()) as unknown as Promise<SubscriptionModel[]>;
+  }
 }
 
 export const subscriptionRepository = new SubscriptionRepository();

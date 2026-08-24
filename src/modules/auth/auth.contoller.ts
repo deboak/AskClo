@@ -35,6 +35,25 @@ export class AuthController {
       next(error);
     }
   };
+
+  resendOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { await this.service.resendVerificationOtp(req.user.sub); sendSuccess(res, null, { message: "Verification code sent" }); } catch (error) { next(error); }
+  };
+
+  refresh = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { sendSuccess(res, await this.service.refresh(req.body.refresh_token)); } catch (error) { next(error); }
+  };
+
+  logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { await this.service.logout(req.body.refresh_token); sendSuccess(res, null, { message: "Signed out successfully" }); } catch (error) { next(error); }
+  };
+
+  requestPasswordReset = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { await this.service.requestPasswordReset(req.body.email); sendSuccess(res, null, { message: "If that account exists, a reset code has been sent" }); } catch (error) { next(error); }
+  };
+  resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { await this.service.resetPassword(req.body.email, req.body.code, req.body.password); sendSuccess(res, null, { message: "Password reset successfully" }); } catch (error) { next(error); }
+  };
 }
 
 export const authController = new AuthController(authService);
