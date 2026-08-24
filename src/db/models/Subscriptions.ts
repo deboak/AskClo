@@ -1,5 +1,4 @@
-import { Model, ModelObject } from "objection";
-import { UserModel } from "./User";
+import { Model, ModelObject } from "objection";import type { UserModel } from "./User";
 
 export class SubscriptionModel extends Model {
   static get tableName() {
@@ -18,7 +17,10 @@ export class SubscriptionModel extends Model {
     updated_at!: Date;
 
 
-    static relationMappings = {
+    static get relationMappings() {
+        const { UserModel } = require("./User");
+
+        return {
         user: {
             relation: Model.BelongsToOneRelation,
             modelClass: UserModel,
@@ -27,6 +29,7 @@ export class SubscriptionModel extends Model {
                 to: "users.id"
             }
         }
+        };
     }
 }
 

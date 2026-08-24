@@ -9,6 +9,8 @@ export async function up(knex: Knex): Promise<void> {
     table.enum("role", ["user", "admin"]).notNullable().defaultTo("user");
     table.string("avatar");
     table.string("phone_number").notNullable().unique();
+    table.boolean("email_verified").notNullable().defaultTo(false);
+    table.boolean("phone_verified").notNullable().defaultTo(false);
     
     table.boolean("is_active").notNullable().defaultTo(true);
     table.boolean("is_deleted").notNullable().defaultTo(false);

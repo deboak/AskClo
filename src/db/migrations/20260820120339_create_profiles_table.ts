@@ -16,6 +16,7 @@ export async function up(knex: Knex): Promise<void> {
     table.date("date_of_birth");
     table.string("style_preference"); // e.g. streetwear, minimalist, traditional-leaning, mixed
     table.string("body_type");
+    table.string("age");
     table.string("cultural_preference"); // tribe/region, optional — informs traditional wear suggestions
 
     table.timestamps(true, true);

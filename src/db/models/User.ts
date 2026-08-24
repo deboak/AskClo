@@ -1,8 +1,7 @@
 import { Model, ModelObject } from "objection";
-import { AuthIdentityModel, AuthIdentityModelType } from "./AuthIdentity";
-import { profile } from "node:console";
-import { ProfileModel, ProfileModelType } from "./Profiles";
-import { SubscriptionModel, SubscriptionModelType } from "./Subscriptions";
+import type { AuthIdentityModelType } from "./AuthIdentity";
+import type { ProfileModelType } from "./Profiles";
+import type { SubscriptionModelType } from "./Subscriptions";
 
 export class UserModel extends Model {
   static get tableName() {
@@ -12,8 +11,12 @@ export class UserModel extends Model {
   id!: string;
   first_name!: string;
   last_name!: string;
+  age?: string | null;
+  username?: string | null;
   phone_number?: string | null;
   email?: string | null;
+  password_hash?: string | null;
+  role!: "user" | "admin";
   email_verified!: boolean;
   pending_email?: string | null;
   avatar?: string | null;
@@ -24,18 +27,23 @@ export class UserModel extends Model {
   created_at!: Date;
   updated_at!: Date;
 
-  authIdentity?: AuthIdentityModelType[];
-  profile?: ProfileModelType[];
-  subscription?: SubscriptionModelType[];
+  authIdentity?: AuthIdentityModelType;
+  profile?: ProfileModelType;
+  subscription?: SubscriptionModelType;
   
 
-  static relationMappings = {
-    authIdentity: {
+  static get relationMappings() {
+    const { AuthIdentityModel } = require("./AuthIdentity");
+    const { ProfileModel } = require("./Profiles");
+    const { SubscriptionModel } = require("./Subscriptions");
+
+    return {
+      authIdentity: {
         relation: Model.HasOneRelation,
         modelClass: AuthIdentityModel,
         join: {
             from: "users.id",
-            to: "authIdentity.user_id"
+            to: "auth_identities.user_id"
         },
     },
 
@@ -44,7 +52,7 @@ export class UserModel extends Model {
         modelClass: ProfileModel,
         join: {
             from: "users.id",
-            to: "profile.user_id",
+            to: "profiles.user_id",
         },
     },
 
@@ -53,9 +61,10 @@ export class UserModel extends Model {
         modelClass: SubscriptionModel,
         join: {
             from: "users.id",
-            to: "subscription.user_id",
+            to: "subscriptions.user_id",
         },
     },
+    };
   }
 }
 export type UserModelType = ModelObject<UserModel>;

@@ -1,8 +1,8 @@
 import {Router} from "express"
+import authRouter from "../modules/auth/auth.route";
 
 const router = Router()
 
-// Add an auth router here when it exists:
-// router.use("/auth", authRouter);
+router.use("/auth", authRouter);
 
 export default router;

@@ -1,5 +1,5 @@
 import { Model, ModelObject } from "objection";
-import { UserModel } from "./User";
+import type { UserModel } from "./User";
 
 
 export class AuthIdentityModel extends Model {
@@ -15,7 +15,10 @@ export class AuthIdentityModel extends Model {
     updated_at!: Date;
 
 
-    static relationMappings = {
+    static get relationMappings() {
+        const { UserModel } = require("./User");
+
+        return {
         user: {
             relation: Model.BelongsToOneRelation,
             modelClass: UserModel,
@@ -24,6 +27,7 @@ export class AuthIdentityModel extends Model {
                 to: "users.id"
             }
         }
+        };
     }
 
 }

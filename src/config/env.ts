@@ -23,8 +23,8 @@ function normalizeBaseUrl(value: string | undefined): string {
 export const AppEnv = {
   PORT: process.env.PORT,
   DB_URL: process.env.DB_URL,
-  JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET,
-  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
+  JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET,
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
   NODE_ENV: process.env.NODE_ENV || "development",
   RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS,
@@ -67,6 +67,7 @@ export const StorageEnv = {
 export const Termii = {
   API_KEY: process.env.TERMII_API_KEY,
   SENDER_ID: process.env.TERMII_SENDER_ID,
+  BASE_URL: process.env.TERMII_BASE_URL || "https://api.ng.termii.com/api",
 };
 
 export const Twilio = {
