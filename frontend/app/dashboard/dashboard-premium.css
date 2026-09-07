@@ -2545,6 +2545,64 @@
   }
 }
 
+/* Keep mobile chat header actions inside the viewport */
+@media (max-width: 850px) {
+  .conversationRoom > header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 94px;
+    overflow: visible;
+  }
+
+  .conversationRoom > header .historyToggle {
+    position: absolute;
+    left: 10px;
+    width: 82px !important;
+    min-width: 82px;
+  }
+
+  .conversationRoom > header > div:nth-child(2) {
+    min-width: 0;
+    justify-self: auto;
+  }
+
+  .conversationRoom > header .chatHeaderActions {
+    position: absolute;
+    right: 10px;
+    max-width: 104px;
+  }
+
+  .conversationRoom > header .chatHeaderActions > button {
+    flex: 0 1 auto;
+    min-width: 46px;
+  }
+}
+
+@media (max-width: 390px) {
+  .conversationRoom > header {
+    padding-right: 82px;
+    padding-left: 82px;
+  }
+
+  .conversationRoom > header .historyToggle {
+    left: 7px;
+    width: 72px !important;
+    min-width: 72px;
+    padding: 0 8px !important;
+  }
+
+  .conversationRoom > header .chatHeaderActions {
+    right: 7px;
+  }
+
+  .conversationRoom > header .chatHeaderActions > button {
+    min-width: 44px;
+    padding: 0 7px;
+  }
+}
+
 /* Mobile chat viewport: header, messages, composer, then tab bar */
 @media (max-width: 850px) {
   .dashboardShell:has(.dashChat),
