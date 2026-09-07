@@ -2752,3 +2752,34 @@
     margin-left: 8px;
   }
 }
+
+/* Keep every chat-header control within the mobile viewport. */
+@media (max-width: 850px) {
+  .conversationRoom > header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 8px;
+    padding-right: max(10px, env(safe-area-inset-right));
+    padding-left: max(10px, env(safe-area-inset-left));
+  }
+
+  .conversationRoom > header .historyToggle {
+    position: static;
+    justify-self: start;
+  }
+
+  .conversationRoom > header .chatHeaderActions {
+    position: static;
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    justify-self: end;
+  }
+}
+
+@media (max-width: 390px) {
+  .conversationRoom > header {
+    padding-right: max(7px, env(safe-area-inset-right));
+    padding-left: max(7px, env(safe-area-inset-left));
+  }
+}
