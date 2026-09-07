@@ -16,6 +16,54 @@ const links = [
   ["/dashboard/profile", "○", "Style profile"],
 ];
 
+const mobileLinks = [
+  ["/dashboard", "Home", "home"],
+  ["/dashboard/chat", "Clo", "chat"],
+  ["/dashboard/wardrobe", "Wardrobe", "wardrobe"],
+  ["/dashboard/try-ons", "Try-ons", "tryon"],
+  ["/dashboard/profile", "Profile", "profile"],
+];
+
+function MobileNavIcon({ name }: { name: string }) {
+  const paths: Record<string, React.ReactNode> = {
+    home: (
+      <>
+        <path d="M3.5 10.5 12 3l8.5 7.5" />
+        <path d="M5.5 9.5V21h13V9.5M9.5 21v-6h5v6" />
+      </>
+    ),
+    chat: (
+      <>
+        <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-5.5 4v-4.6A2.5 2.5 0 0 1 4 13.9Z" />
+        <path d="M8 8h8M8 12h5" />
+      </>
+    ),
+    wardrobe: (
+      <>
+        <path d="M8 4h8l3 4v12H5V8Z" />
+        <path d="M5 8h14M9 4a3 3 0 0 1 6 0" />
+      </>
+    ),
+    tryon: (
+      <>
+        <path d="M9 4a3 3 0 0 1 6 0c0 1.8-3 2.1-3 4" />
+        <path d="m12 8-8 5 2 3 2-1v6h8v-6l2 1 2-3Z" />
+      </>
+    ),
+    profile: (
+      <>
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
+      </>
+    ),
+  };
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {paths[name]}
+    </svg>
+  );
+}
+
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const router = useRouter();
@@ -128,6 +176,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </header>
         {children}
       </div>
+      <nav className="mobileTabBar" aria-label="Dashboard navigation">
+        {mobileLinks.map(([href, label, icon]) => {
+          const selected = path === href;
+          return (
+            <Link key={href} href={href} className={selected ? "active" : ""}>
+              <MobileNavIcon name={icon} />
+              <span>{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
       {open && (
         <button
           className="navBackdrop"
