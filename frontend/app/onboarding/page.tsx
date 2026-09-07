@@ -1,0 +1,222 @@
+"use client";
+import { FormEvent, useState } from "react";
+import { useSafeEffect as useEffect } from "@/lib/use-safe-effect";
+import { useRouter } from "next/navigation";
+import { Brand } from "@/components/brand";
+import { Arrow, Check } from "@/components/icons";
+import { api, getSession } from "@/lib/api";
+import type { Profile } from "@/lib/types";
+import "./onboarding.css";
+import "./onboarding-premium.css";
+
+const styleOptions = [
+  "Minimal & refined",
+  "Bold & expressive",
+  "Classic & tailored",
+  "Relaxed & effortless",
+  "Streetwear-led",
+  "Traditional-first",
+];
+const cultureOptions = ["Yoruba", "Igbo", "Hausa", "Pan-African", "Global", "A thoughtful mix"];
+const bodyOptions = [
+  "Straight",
+  "Curvy",
+  "Athletic",
+  "Petite",
+  "Plus-size",
+  "Tall",
+  "Prefer not to label",
+];
+
+export default function OnboardingPage() {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [data, setData] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!getSession()?.access_token) router.replace("/login");
+    else
+      api<Profile>("/profile")
+        .then((profile) =>
+          setData({
+            gender: profile.gender ?? "",
+            age: profile.age ?? "",
+            style_preference: profile.style_preference ?? "",
+            body_type: profile.body_type ?? "",
+            cultural_preference: profile.cultural_preference ?? "",
+          }),
+        )
+        .catch(() => {});
+  }, [router]);
+  function choose(key: string, value: string) {
+    setData((old) => ({ ...old, [key]: value }));
+  }
+  async function finish(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      await api("/profile", { method: "PATCH", body: JSON.stringify(data) });
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Your profile could not be saved");
+    } finally {
+      setSaving(false);
+    }
+  }
+  const canContinue =
+    step === 1
+      ? data.gender && data.age
+      : step === 2
+        ? data.style_preference && data.body_type
+        : data.cultural_preference;
+  return (
+    <main className="onboardingPage">
+      <header>
+        <Brand />
+        <span>Step {step} of 3</span>
+        <button onClick={() => router.push("/dashboard")}>Skip for now</button>
+      </header>
+      <div className="onboardingProgress">
+        <i style={{ width: `${step * 33.333}%` }} />
+      </div>
+      <form onSubmit={finish}>
+        <span className="kicker dark">Let&apos;s get acquainted</span>
+        {step === 1 && (
+          <section>
+            <h1>
+              First, tell Clo a little about <em>you.</em>
+            </h1>
+            <p>This helps us choose the right model, proportions and styling language.</p>
+            <label>How do you identify?</label>
+            <div className="choiceGrid compact">
+              {[
+                ["female", "Woman"],
+                ["male", "Man"],
+                ["other", "Another identity"],
+                ["prefer_not_to_say", "Prefer not to say"],
+              ].map(([v, l]) => (
+                <button
+                  type="button"
+                  className={data.gender === v ? "selected" : ""}
+                  onClick={() => choose("gender", v)}
+                  key={v}
+                >
+                  {l}
+                  {data.gender === v && <Check />}
+                </button>
+              ))}
+            </div>
+            <label>Your age range</label>
+            <div className="choiceGrid compact">
+              {["18–24", "25–34", "35–44", "45–54", "55+"].map((v) => (
+                <button
+                  type="button"
+                  className={data.age === v ? "selected" : ""}
+                  onClick={() => choose("age", v)}
+                  key={v}
+                >
+                  {v}
+                  {data.age === v && <Check />}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+        {step === 2 && (
+          <section>
+            <h1>
+              How should your wardrobe <em>feel?</em>
+            </h1>
+            <p>Choose the direction closest to you. Clo will refine it through conversation.</p>
+            <label>Your everyday style</label>
+            <div className="choiceGrid">
+              {styleOptions.map((v) => (
+                <button
+                  type="button"
+                  className={data.style_preference === v ? "selected" : ""}
+                  onClick={() => choose("style_preference", v)}
+                  key={v}
+                >
+                  {v}
+                  {data.style_preference === v && <Check />}
+                </button>
+              ))}
+            </div>
+            <label>How do you describe your frame?</label>
+            <div className="choiceGrid compact">
+              {bodyOptions.map((v) => (
+                <button
+                  type="button"
+                  className={data.body_type === v ? "selected" : ""}
+                  onClick={() => choose("body_type", v)}
+                  key={v}
+                >
+                  {v}
+                  {data.body_type === v && <Check />}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+        {step === 3 && (
+          <section>
+            <h1>
+              What should Clo keep <em>close?</em>
+            </h1>
+            <p>Your cultural wardrobe belongs at the centre of your style—not in a separate box.</p>
+            <label>Cultural style preference</label>
+            <div className="choiceGrid">
+              {cultureOptions.map((v) => (
+                <button
+                  type="button"
+                  className={data.cultural_preference === v ? "selected" : ""}
+                  onClick={() => choose("cultural_preference", v)}
+                  key={v}
+                >
+                  {v}
+                  {data.cultural_preference === v && <Check />}
+                </button>
+              ))}
+            </div>
+            <div className="onboardingNote">
+              ✦ You can update every answer later from your style profile.
+            </div>
+          </section>
+        )}
+        {error && <div className="formError">{error}</div>}
+        <footer>
+          <button
+            type="button"
+            className="backButton"
+            onClick={() => setStep((s) => Math.max(1, s - 1))}
+            disabled={step === 1}
+          >
+            ← Back
+          </button>
+          {step < 3 ? (
+            <button
+              type="button"
+              className="submitButton"
+              disabled={!canContinue}
+              onClick={() => setStep((s) => s + 1)}
+            >
+              Continue <Arrow />
+            </button>
+          ) : (
+            <button className="submitButton" disabled={!canContinue || saving}>
+              {saving ? (
+                "Saving…"
+              ) : (
+                <>
+                  Open my wardrobe <Arrow />
+                </>
+              )}
+            </button>
+          )}
+        </footer>
+      </form>
+    </main>
+  );
+}

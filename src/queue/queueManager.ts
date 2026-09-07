@@ -1,6 +1,8 @@
 import { JobsOptions, Queue } from 'bullmq';
 import { redis } from './../config/redis';
 
+export type QueueJobOptions = JobsOptions & { repeat?: { pattern: string } };
+
 class QueueManager {
   private queues = new Map<string, Queue>();
 
@@ -11,11 +13,11 @@ class QueueManager {
     return this.queues.get(name)!;
   }
 
-  add<T>(queueName: string, jobName: string, data: T, opts?: JobsOptions) {
+  add<T>(queueName: string, jobName: string, data: T, opts?: QueueJobOptions) {
     return this.get(queueName).add(jobName, data, opts);
   }
 
-  addBulk<T>(queueName: string, jobs: { name: string; data: T; opts?: JobsOptions }[]) {
+  addBulk<T>(queueName: string, jobs: { name: string; data: T; opts?: QueueJobOptions }[]) {
     return this.get(queueName).addBulk(jobs);
   }
 

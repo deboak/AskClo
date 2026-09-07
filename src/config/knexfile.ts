@@ -4,14 +4,15 @@ import dotenv from "dotenv";
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const environment = process.env.NODE_ENV || "development";
+const databaseUrl = process.env.DB_URL || process.env.DATABASE_URL;
 
-if (!process.env.DB_URL) {
-  throw new Error("DB_URL is required to run database migrations");
+if (!databaseUrl) {
+  throw new Error("DB_URL or DATABASE_URL is required to run database migrations");
 }
 
 const baseConfig = {
   client: "pg",
-  connection: process.env.DB_URL,
+  connection: databaseUrl,
   migrations: {
     directory: path.resolve(__dirname, "../db/migrations"),
     extension: "ts",
@@ -28,7 +29,7 @@ const config = {
       idleTimeoutMillis: 30000,
       reapIntervalMillis: 1000,
     },
-    debug: true, // logs every SQL query to the console — useful locally, noisy in prod
+    debug: false,
   },
 
   production: {
