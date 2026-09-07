@@ -45,6 +45,7 @@ export interface SubscriptionOverview {
     genericTryOn: boolean;
     ownPhotoTryOn: boolean;
     freeGenerationLimit: number | null;
+    monthlyGenerationLimit: number | null;
   };
   daysRemaining: number;
   isActive: boolean;

@@ -80,7 +80,7 @@ export default function DashboardPage() {
         </article>
         <article className="darkStat">
           <span>Current plan</span>
-          <strong>{subscription?.subscription.tier.replace("_", " ") ?? "—"}</strong>
+          <strong>{subscription?.subscription.tier.replace("_", " ") ?? "Not available"}</strong>
           <p>{subscription ? `${subscription.daysRemaining} days remaining` : "Loading plan…"}</p>
           <Link href="/dashboard/subscription">Manage plan →</Link>
         </article>

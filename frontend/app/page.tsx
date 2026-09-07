@@ -44,9 +44,13 @@ const plans = [
     name: "Basic",
     price: "₦6,800",
     suffix: "/month",
-    per: "25 try-ons every month",
+    per: "25 virtual try-ons each month",
     featured: true,
-    features: ["Everything in Free", "25 model try-ons monthly", "Garment scanning, 3× weekly"],
+    features: [
+      "Everything in Free",
+      "25 virtual try-ons each month",
+      "Upload and organise your wardrobe",
+    ],
     action: "Choose Basic",
   },
   {
@@ -55,7 +59,11 @@ const plans = [
     price: "₦9,500",
     suffix: "/month",
     per: "Your own photo, unlocked",
-    features: ["Everything in Basic", "35+ model try-ons", "Try-on with your own photo"],
+    features: [
+      "Everything in Basic",
+      "35 virtual try-ons each month",
+      "Try-on with your own photo",
+    ],
     action: "Choose Pro",
   },
 ];
@@ -267,7 +275,7 @@ export default function Home() {
               <div className="stepIcon">✦</div>
               <h3>Receive your edit</h3>
               <p>
-                Clo puts together a specific outfit—with fabric, silhouette and styling details
+                Clo puts together a specific outfit with fabric, silhouette and styling details
                 chosen just for you.
               </p>
             </article>

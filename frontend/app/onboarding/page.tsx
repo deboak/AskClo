@@ -165,7 +165,9 @@ export default function OnboardingPage() {
             <h1>
               What should Clo keep <em>close?</em>
             </h1>
-            <p>Your cultural wardrobe belongs at the centre of your style—not in a separate box.</p>
+            <p>
+              Your cultural wardrobe belongs at the centre of your style, not in a separate box.
+            </p>
             <label>Cultural style preference</label>
             <div className="choiceGrid">
               {cultureOptions.map((v) => (
