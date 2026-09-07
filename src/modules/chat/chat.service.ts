@@ -40,7 +40,7 @@ function buildSystemPrompt(profile: {
   body_type?: string | null;
   age?: string | null;
   cultural_preference?: string | null;
-} | undefined): string {
+} | undefined, knownSlots: ChatSlots): string {
   const profileContext = profile
     ? `The user's standing style profile: gender=${profile.gender ?? "unspecified"}, age=${profile.age ?? "unspecified"}, body type=${profile.body_type ?? "unspecified"}, usual style preference=${profile.style_preference ?? "unspecified"}, cultural preference=${profile.cultural_preference ?? "unspecified"}. Use this as background context to make suggestions feel personally relevant; do not re-ask for it.`
     : "No standing profile is available yet.";
@@ -50,6 +50,8 @@ function buildSystemPrompt(profile: {
 ${profileContext}
 
 Before suggesting a specific outfit, collect: (1) occasion, (2) style, (3) colour preference or explicit \"no preference\", and (4) constraints such as fit, weather, budget, or modesty, or explicit \"none\". Ask for at most one missing item at a time and never re-ask for information already supplied. Once all four are known, give a specific styled outfit suggestion with fabric, silhouette, and styling details.
+
+Known slots from earlier turns: ${JSON.stringify(knownSlots)}. Keep every known value unless the user explicitly corrects it. If any slot is null, ask only for the first missing slot in this order: occasion, style, colour, constraints. Do not give a specific outfit suggestion until every slot is present.
 
 Respond only with strict JSON matching this exact shape:
 {
@@ -78,10 +80,47 @@ function isLlmResponse(value: unknown): value is LlmStructuredResponse {
     );
 }
 
+function mockLlmResponse(
+  history: Array<{ role: "user" | "assistant"; content: string }>,
+  knownSlots: ChatSlots,
+): LlmStructuredResponse {
+  const userMessages = history
+    .filter((message) => message.role === "user")
+    .map((message) => message.content.toLowerCase());
+  const combined = userMessages.join(" ");
+  const slots: ChatSlots = {
+    occasion: knownSlots.occasion ?? userMessages.find((message) => /wedding|party|date|interview|work|church|birthday|event/.test(message)) ?? null,
+    style: knownSlots.style ?? /streetwear|traditional|casual|formal|elegant|minimalist|corporate/.exec(combined)?.[0] ?? null,
+    colour: knownSlots.colour ?? /black|white|blue|red|green|pink|purple|brown|yellow|no preference/.exec(combined)?.[0] ?? null,
+    constraints: knownSlots.constraints ?? /budget|modest|weather|loose|fitted|comfort|none/.exec(combined)?.[0] ?? null,
+  };
+  const missing = (Object.keys(slots) as Array<keyof ChatSlots>).find((key) => !slots[key]);
+  if (missing) {
+    const questions: Record<keyof ChatSlots, string> = {
+      occasion: "What occasion are you dressing for?",
+      style: "What style or vibe would you like?",
+      colour: "Do you have a colour preference, or no preference?",
+      constraints: "Any constraints such as budget, weather, fit, or modesty? You can say none.",
+    };
+    return { reply: `[Mock Clo] ${questions[missing]}`, slots, ready_to_generate: false };
+  }
+  return {
+    reply: "[Mock Clo] Try a tailored outfit in your selected colour, with clean accessories and a silhouette that suits your occasion. This is a mock styling response.",
+    slots,
+    ready_to_generate: true,
+  };
+}
+
 async function callLlm(
   systemPrompt: string,
   history: Array<{ role: "user" | "assistant"; content: string }>,
+  knownSlots: ChatSlots,
 ): Promise<LlmStructuredResponse> {
+  if (AppEnv.MOCK_LLM) {
+    logger.info("Using mock LLM response");
+    return mockLlmResponse(history, knownSlots);
+  }
+
   if (!AppEnv.LLM_API_KEY) {
     throw new AppError(503, "Clo is not configured yet. Please try again later.");
   }
@@ -125,7 +164,36 @@ async function callLlm(
   }
 }
 
+function slotsFromMetadata(metadata: unknown): ChatSlots | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const slots = (metadata as { slots?: unknown }).slots;
+  if (!slots || typeof slots !== "object") return null;
+  const source = slots as Record<string, unknown>;
+  if (!["occasion", "style", "colour", "constraints"].every((key) => source[key] === null || typeof source[key] === "string")) return null;
+  return {
+    occasion: source.occasion as string | null,
+    style: source.style as string | null,
+    colour: source.colour as string | null,
+    constraints: source.constraints as string | null,
+  };
+}
+
 export class ChatService {
+  async listConversations(userId: string) {
+    const conversations = await conversationRepository.findAllByUserId(userId);
+    return Promise.all(conversations.map(async (conversation) => {
+      const messages = await messageRepository.findAllByConversationId(conversation.id);
+      const firstUserMessage = messages.find((message) => message.role === "user");
+      const lastMessage = messages.at(-1);
+      return {
+        id: conversation.id,
+        title: conversation.title || firstUserMessage?.content.slice(0, 80) || "New styling conversation",
+        preview: lastMessage?.content.slice(0, 120) || null,
+        lastMessageAt: conversation.last_message_at || conversation.created_at,
+      };
+    }));
+  }
+
   async sendMessage(userId: string, content: string, conversationId?: string): Promise<ChatTurnResult> {
     const conversation = conversationId
       ? await conversationRepository.findByIdAndUserId(conversationId, userId)
@@ -140,7 +208,27 @@ export class ChatService {
     const history = priorMessages
       .filter((message) => message.role === "user" || message.role === "assistant")
       .map((message) => ({ role: message.role as "user" | "assistant", content: message.content }));
-    const result = await callLlm(buildSystemPrompt(profile), [...history, { role: "user", content }]);
+    let knownSlots: ChatSlots = { ...slotsSchema };
+    for (const message of [...priorMessages].reverse()) {
+      const savedSlots = slotsFromMetadata(message.metadata);
+      if (savedSlots) {
+        knownSlots = savedSlots;
+        break;
+      }
+    }
+    const llmResult = await callLlm(
+      buildSystemPrompt(profile, knownSlots),
+      [...history, { role: "user", content }],
+      knownSlots,
+    );
+    const slots: ChatSlots = {
+      occasion: llmResult.slots.occasion ?? knownSlots.occasion,
+      style: llmResult.slots.style ?? knownSlots.style,
+      colour: llmResult.slots.colour ?? knownSlots.colour,
+      constraints: llmResult.slots.constraints ?? knownSlots.constraints,
+    };
+    const readyToGenerate = llmResult.ready_to_generate && Object.values(slots).every((slot) => slot !== null);
+    const result = { ...llmResult, slots, ready_to_generate: readyToGenerate };
 
     await messageRepository.create({ conversation_id: conversation.id, role: "user", content });
     const assistantMessage: PartialModelObject<MessageModel> = {

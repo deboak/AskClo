@@ -25,11 +25,7 @@ export class AuthController {
 
   verifyContact = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const result = await this.service.completeVerification(
-        req.user.sub,
-        req.body.method,
-        req.body.code,
-      );
+      const result = await this.service.completeVerification(req.body.method, req.body.code, req.body);
       sendSuccess(res, result, { message: "Contact verified successfully" });
     } catch (error) {
       next(error);

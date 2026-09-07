@@ -58,6 +58,9 @@ export class GenerationService {
       prompt: generation.prompt ?? "",
       inputImageUrl,
       garmentImageUrl: garment.image_url,
+      garmentCategory: garment.category === "tops" || garment.category === "bottoms" || garment.category === "one-pieces"
+        ? garment.category
+        : "auto",
     });
     return generation;
   }

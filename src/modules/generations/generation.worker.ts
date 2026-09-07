@@ -7,8 +7,8 @@ import type { GenerationJobData } from "../../queue/generation.queue";
 import { logger } from "../../utils/logger";
 import { copyRemoteImageToR2 } from "../../utils/r2";
 
-const FASHN_MODEL_ID = "fal-ai/fashn/tryon/v1.5";
-// Conservative temporary estimate; replace after performance-mode pricing is confirmed in fal.ai.
+const FASHN_MODEL_ID = "fal-ai/fashn/tryon/v1.6";
+// FASHN v1.6 is currently listed at the same per-generation price across quality modes.
 const PERFORMANCE_COST_ESTIMATE_USD = 0.075;
 
 function configuredSpendCap(): number | null {
@@ -42,7 +42,7 @@ async function reserveDailySpend(costUsd: number): Promise<boolean> {
 
 export function startGenerationWorker() {
   return createWorker<GenerationJobData>("generation", async (job) => {
-    const { generationId, inputImageUrl, garmentImageUrl } = job.data;
+    const { generationId, inputImageUrl, garmentImageUrl, garmentCategory = "auto" } = job.data;
     await generationRepository.updateStatus(generationId, "processing");
 
     try {
@@ -61,11 +61,12 @@ export function startGenerationWorker() {
         input: {
           model_image: inputImageUrl,
           garment_image: garmentImageUrl,
-          mode: "performance",
-          category: "auto",
+          mode: "quality",
+          category: garmentCategory,
           garment_photo_type: "auto",
           moderation_level: "permissive",
           num_samples: 1,
+          segmentation_free: false,
           output_format: "png",
         },
       });

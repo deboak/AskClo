@@ -11,6 +11,7 @@ import { db } from "../../config/db";
 import { redis } from "../../config/redis";
 import { queueOtpJob } from "../../queue/jobs/otp";
 import { queueNotificationJob } from "../../queue/jobs/notification";
+import { profileRepository } from "../../db/repositories/ProfileRepository";
 
 const PASSWORD_SALT_ROUNDS = 12;
 
@@ -81,8 +82,8 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(input.password, PASSWORD_SALT_ROUNDS);
-    const user = await UserModel.transaction((trx) =>
-      this.userRepo.createInTrx(
+    const user = await UserModel.transaction(async (trx) => {
+      const createdUser = await this.userRepo.createInTrx(
         {
           first_name: input.first_name.trim(),
           last_name: input.last_name.trim(),
@@ -94,8 +95,10 @@ export class AuthService {
           phone_verified: false,
         },
         trx,
-      ),
-    );
+      );
+      await profileRepository.createInTrx({ user_id: createdUser.id }, trx);
+      return createdUser;
+    });
 
     const code = await this.otpStore.create(user.id, "phone");
     if (process.env.NODE_ENV === "production") {
@@ -132,10 +135,20 @@ export class AuthService {
     return issueTokens(user);
   }
 
-  async completeVerification(userId: string, method: VerificationMethod, code: string) {
+  async completeVerification(
+    method: VerificationMethod,
+    code: string,
+    identifier: { email?: string; phone_number?: string },
+  ) {
+    const user = method === "email"
+      ? await this.userRepo.findByEmail(identifier.email ?? "")
+      : await this.userRepo.findByPhoneNumber(normalizeNigerianPhoneNumber(identifier.phone_number ?? "").e164);
+    if (!user) throw new AppError(400, "Invalid or expired verification code");
+
+    const userId = user.id;
     await this.otpStore.verify(userId, method, code);
 
-    const user = await db.transaction(async (trx) => {
+    const verifiedUser = await db.transaction(async (trx) => {
       const verifiedUser = await this.userRepo.updateByIdInTrx(userId, {
         ...(method === "email" ? { email_verified: true } : { phone_verified: true }),
       }, trx);
@@ -147,7 +160,7 @@ export class AuthService {
       return verifiedUser;
     });
 
-    return issueTokens(user);
+    return issueTokens(verifiedUser);
   }
 
   async resendVerificationOtp(userId: string): Promise<void> {

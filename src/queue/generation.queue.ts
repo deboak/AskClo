@@ -5,6 +5,7 @@ export interface GenerationJobData {
   prompt: string;
   inputImageUrl: string;
   garmentImageUrl: string;
+  garmentCategory: "tops" | "bottoms" | "one-pieces" | "auto";
 }
 
 export function queueGenerationJob(data: GenerationJobData) {

@@ -41,6 +41,7 @@ export const AppEnv = {
   BASE_URL: normalizeBaseUrl(process.env.BASE_URL),
   LLM_API_KEY: process.env.LLM_API_KEY || process.env.OPENAI_API_KEY,
   LLM_MODEL: process.env.LLM_MODEL || "gpt-4o-mini",
+  MOCK_LLM: process.env.MOCK_LLM === "true",
   FAL_KEY: process.env.FAL_KEY,
   GENERIC_MALE_MODEL_IMAGE_URL: process.env.GENERIC_MALE_MODEL_IMAGE_URL,
   GENERIC_FEMALE_MODEL_IMAGE_URL: process.env.GENERIC_FEMALE_MODEL_IMAGE_URL,

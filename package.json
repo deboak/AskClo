@@ -4,8 +4,10 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
+    "build:web": "npm --prefix frontend run build",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
+    "dev:web": "npm --prefix frontend run dev",
     "db:new": "tsx ./node_modules/knex/bin/cli.js migrate:make --knexfile src/config/knexfile.ts -x ts",
     "db:migrate": "tsx ./node_modules/knex/bin/cli.js migrate:latest --knexfile src/config/knexfile.ts",
     "db:rollback": "tsx ./node_modules/knex/bin/cli.js migrate:rollback --knexfile src/config/knexfile.ts",

@@ -7,7 +7,8 @@ export class SubscriptionController {
 
   getCurrent = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      sendSuccess(res, await this.service.getActiveSubscription(req.user.sub));
+      const result = await this.service.getSubscriptionOverview(req.user.sub);
+      sendSuccess(res, result, { message: "Subscription retrieved successfully" });
     } catch (error) {
       next(error);
     }
@@ -15,9 +16,26 @@ export class SubscriptionController {
 
   cancel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      sendSuccess(res, await this.service.cancelSubscription(req.user.sub), {
-        message: "Subscription cancelled successfully",
+      const subscription = await this.service.cancelSubscription(req.user.sub);
+      sendSuccess(res, {
+        subscription,
+        accessEndsAt: subscription.current_period_end,
+      }, {
+        message: "Cancellation scheduled. Your subscription benefits remain available until the current period ends.",
       });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getEntitlements = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      sendSuccess(res, {
+        free_trial: this.service.getTierEntitlements("free_trial"),
+        basic: this.service.getTierEntitlements("basic"),
+        pro: this.service.getTierEntitlements("pro"),
+        gold: this.service.getTierEntitlements("gold"),
+      }, { message: "Subscription entitlements retrieved successfully" });
     } catch (error) {
       next(error);
     }

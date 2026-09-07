@@ -1,12 +1,12 @@
 import { Router, raw } from "express";
 import { auth } from "../../middlewares/authenticate";
 import { createRateLimiter } from "../../middlewares/rateLimiter";
-import { sendSuccess } from "../../utils/response";
-import { garmentService } from "./garment.service";
+import { garmentController } from "./garment.controller";
+import { validate } from "../../middlewares/validate";
+import { updateGarmentSchema } from "./garment.validator";
 
 const garmentRouter = Router();
-garmentRouter.get("/", auth, async (req, res, next) => { try { sendSuccess(res, await garmentService.list(req.user.sub)); } catch (error) { next(error); } });
-garmentRouter.post("/upload", auth, createRateLimiter({ windowMs: 60_000, max: 10 }), raw({ type: "image/*", limit: "10mb" }), async (req, res, next) => {
-  try { const contentType = String(req.headers["content-type"] ?? "").split(";", 1)[0]; sendSuccess(res, await garmentService.upload(req.user.sub, req.body as Buffer, contentType), { statusCode: 201 }); } catch (error) { next(error); }
-});
+garmentRouter.get("/", auth, garmentController.list);
+garmentRouter.post("/upload", auth, createRateLimiter({ windowMs: 60_000, max: 10 }), raw({ type: "image/*", limit: "10mb" }), garmentController.upload);
+garmentRouter.patch("/:garmentId", auth, validate(updateGarmentSchema), garmentController.update);
 export default garmentRouter;

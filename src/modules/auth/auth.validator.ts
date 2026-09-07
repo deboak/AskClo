@@ -23,6 +23,13 @@ export const verifyContactSchema = z.object({
   body: z.object({
     method: z.enum(["email", "phone"]),
     code: z.string().regex(/^\d{6}$/, "Verification code must be 6 digits"),
+    email: z.string().trim().email().transform((value) => value.toLowerCase()).optional(),
+    phone_number: z.string().trim().min(7).max(30).optional(),
+  }).superRefine((value, context) => {
+    const identifier = value.method === "email" ? value.email : value.phone_number;
+    if (!identifier) {
+      context.addIssue({ code: "custom", path: [value.method === "email" ? "email" : "phone_number"], message: `${value.method === "email" ? "Email" : "Phone number"} is required` });
+    }
   }),
 });
 

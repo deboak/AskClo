@@ -8,8 +8,7 @@ const authRouter = Router();
 
 authRouter.post("/register", validate(registerSchema), authController.register);
 authRouter.post("/login", validate(loginSchema), authController.login);
-authRouter.post("/verify", allowPartialAuth, validate(verifyContactSchema), authController.verifyContact
-);
+authRouter.post("/verify", validate(verifyContactSchema), authController.verifyContact);
 authRouter.post("/resend-otp", allowPartialAuth, authController.resendOtp);
 authRouter.post("/refresh", validate(refreshSchema), authController.refresh);
 authRouter.post("/logout", validate(refreshSchema), authController.logout);

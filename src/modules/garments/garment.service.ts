@@ -15,7 +15,11 @@ export class GarmentService {
     return garmentRepository.create({ user_id: userId, image_url: imageUrl });
   }
   async list(userId: string) { return garmentRepository.findAllByUserId(userId); }
-  async update(userId: string, garmentId: string, data: Pick<GarmentModel, "name" | "category" | "colour">) {
+  async update(
+    userId: string,
+    garmentId: string,
+    data: Partial<Pick<GarmentModel, "name" | "category" | "colour">>,
+  ) {
     const garment = await garmentRepository.findByIdAndUserId(garmentId, userId);
     if (!garment) throw new AppError(404, "Garment not found");
     return garmentRepository.updateById(garment.id, data);

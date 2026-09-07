@@ -13,6 +13,7 @@ export class SubscriptionModel extends Model {
     current_period_end!: string;
     paystack_customer_id?: string;
     paystack_subscription_code?: string;
+    cancel_at_period_end!: boolean;
     created_at!: Date;
     updated_at!: Date;
 
