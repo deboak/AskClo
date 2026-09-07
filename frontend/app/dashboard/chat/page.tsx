@@ -45,7 +45,10 @@ export default function DashboardChat() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [briefOpen, setBriefOpen] = useState(false);
   const scrollArea = useRef<HTMLDivElement>(null);
+  const composer = useRef<HTMLTextAreaElement>(null);
+  const conversationRequest = useRef(0);
 
   useEffect(() => {
     void api<ConversationSummary[]>("/chat/conversations")
@@ -61,29 +64,37 @@ export default function DashboardChat() {
   }, [messages, sending]);
 
   async function openConversation(id: string) {
+    const requestId = ++conversationRequest.current;
     setActive(id);
     setLoading(true);
     setError("");
     try {
       const history = await api<Message[]>(`/chat/conversations/${id}/messages`);
+      if (requestId !== conversationRequest.current) return;
       setMessages(history);
       const metadata = [...history].reverse().find((message) => message.metadata?.slots)?.metadata;
       if (metadata?.slots) setSlots(metadata.slots);
       else setSlots(blank);
       setReady(Boolean(metadata?.ready_to_generate));
     } catch (error) {
+      if (requestId !== conversationRequest.current) return;
       setError(error instanceof Error ? error.message : "Conversation could not be loaded");
     } finally {
-      setLoading(false);
+      if (requestId === conversationRequest.current) setLoading(false);
     }
   }
 
   function newConversation() {
+    conversationRequest.current += 1;
     setActive(undefined);
     setMessages([]);
     setSlots(blank);
     setReady(false);
     setError("");
+    setLoading(false);
+    setHistoryOpen(false);
+    setBriefOpen(false);
+    requestAnimationFrame(() => composer.current?.focus());
   }
 
   async function sendMessage(content: string) {
@@ -184,14 +195,22 @@ export default function DashboardChat() {
       <section className="conversationRoom">
         <header>
           <button className="historyToggle" onClick={() => setHistoryOpen(true)}>
-            ☰ <span>History</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 7h14M5 12h14M5 17h9" />
+            </svg>
+            <span>Chats</span>
           </button>
           <div>
             <i />
             <strong>Clo</strong>
             <span>Personal stylist</span>
           </div>
-          {active && <button onClick={newConversation}>New chat</button>}
+          <div className="chatHeaderActions">
+            <button className="briefToggle" onClick={() => setBriefOpen(true)}>
+              Brief
+            </button>
+            {active && <button onClick={newConversation}>New</button>}
+          </div>
         </header>
         <div className="conversationScroll" ref={scrollArea}>
           {loading ? (
@@ -249,6 +268,7 @@ export default function DashboardChat() {
         </div>
         <form className="dashComposer" onSubmit={submit}>
           <textarea
+            ref={composer}
             name="message"
             rows={1}
             maxLength={4000}
@@ -267,7 +287,15 @@ export default function DashboardChat() {
         </form>
       </section>
 
-      <aside className="chatBrief">
+      <aside className={`chatBrief ${briefOpen ? "mobileOpen" : ""}`}>
+        <button
+          className="briefClose"
+          type="button"
+          onClick={() => setBriefOpen(false)}
+          aria-label="Close style brief"
+        >
+          ×
+        </button>
         <span className="dashEyebrow">Style brief</span>
         <h2>{ready ? "Ready for a try-on" : "Building your look"}</h2>
         {(["occasion", "style", "colour", "constraints"] as const).map((key, index) => (
@@ -289,13 +317,22 @@ export default function DashboardChat() {
               ? "Use this direction when creating a virtual outfit try-on."
               : "Clo will ask for the remaining details."}
           </p>
-          {ready && (
-            <Link className="briefAction" href="/dashboard/try-ons">
-              Create a try-on →
-            </Link>
-          )}
+          <Link className="briefAction" href="/dashboard/try-ons">
+            {ready ? "Create a try-on" : "Open try-on studio"} →
+          </Link>
         </footer>
       </aside>
+      {(historyOpen || briefOpen) && (
+        <button
+          className="chatPanelBackdrop"
+          type="button"
+          onClick={() => {
+            setHistoryOpen(false);
+            setBriefOpen(false);
+          }}
+          aria-label="Close chat panel"
+        />
+      )}
     </main>
   );
 }
