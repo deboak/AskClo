@@ -4,7 +4,7 @@ import "./fonts.css";
 import "./premium.css";
 
 export const metadata: Metadata = {
-  title: "AskClo — Your AI stylist",
+  title: "AskClo | Your AI stylist",
   description: "Personal AI styling for every wardrobe, from aso-oke to streetwear.",
 };
 

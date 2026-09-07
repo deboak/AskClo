@@ -60,7 +60,7 @@ export default function WardrobePage() {
         <div>
           <span className="dashEyebrow">Your pieces</span>
           <h1>My wardrobe</h1>
-          <p>Keep the pieces you own—or are considering—ready for a visual try-on.</p>
+          <p>Keep the pieces you own or are considering ready for a visual try-on.</p>
         </div>
         <button
           className="goldAction"

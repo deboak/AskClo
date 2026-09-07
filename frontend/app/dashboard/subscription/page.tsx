@@ -8,15 +8,19 @@ const tiers = [
     id: "basic",
     name: "Basic",
     price: "₦6,800",
-    note: "25 model try-ons monthly",
-    features: ["Generic model try-ons", "Garment scanning", "Unlimited styling chat"],
+    note: "25 virtual try-ons each month",
+    features: [
+      "25 virtual try-ons each month",
+      "Upload and organise your wardrobe",
+      "Unlimited styling chat",
+    ],
   },
   {
     id: "pro",
     name: "Pro",
     price: "₦9,500",
-    note: "35+ try-ons monthly",
-    features: ["Everything in Basic", "Use your own photo", "Priority generations"],
+    note: "35 virtual try-ons each month",
+    features: ["Everything in Basic", "35 virtual try-ons each month", "Use your own photo"],
   },
   {
     id: "gold",
@@ -103,7 +107,9 @@ export default function SubscriptionPage() {
             <p>
               {overview.entitlements.freeGenerationLimit
                 ? `${overview.entitlements.freeGenerationLimit} trial generations`
-                : "Monthly allowance"}
+                : overview.entitlements.monthlyGenerationLimit
+                  ? `${overview.entitlements.monthlyGenerationLimit} try-ons each month`
+                  : "Monthly allowance"}
             </p>
           </div>
           {overview.subscription.tier !== "free_trial" &&

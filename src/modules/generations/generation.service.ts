@@ -16,12 +16,22 @@ export interface RequestGenerationInput {
 }
 
 const FREE_TIER_GENERATION_LIMIT = 2;
+const BASIC_MONTHLY_GENERATION_LIMIT = 25;
+const PRO_MONTHLY_GENERATION_LIMIT = 35;
 const EPOCH = new Date(0);
 
 export class GenerationService {
-  async requestGeneration(userId: string, input: RequestGenerationInput): Promise<GenerationModel> {
-    const subscription = await subscriptionRepository.findActiveByUserId(userId);
-    if (!subscription) throw new AppError(403, "An active subscription is required to generate try-ons");
+  async requestGeneration(
+    userId: string,
+    input: RequestGenerationInput,
+  ): Promise<GenerationModel> {
+    const subscription =
+      await subscriptionRepository.findActiveByUserId(userId);
+    if (!subscription)
+      throw new AppError(
+        403,
+        "An active subscription is required to generate try-ons",
+      );
 
     const [profile, garment] = await Promise.all([
       profileRepository.findByUserId(userId),
@@ -36,21 +46,48 @@ export class GenerationService {
       profile?.gender,
     );
     const generation = await db.transaction(async (trx) => {
-      if (subscription.tier === "free_trial") {
-        await trx.raw("select pg_advisory_xact_lock(hashtext(?))", [`generation-allowance:${userId}`]);
-        const reserved = await generationRepository.countReservedByUserSinceInTrx(userId, EPOCH, trx);
-        if (reserved >= FREE_TIER_GENERATION_LIMIT) {
-          throw new AppError(403, "Your two free try-on generations have been used");
+      const generationLimit =
+        subscription.tier === "free_trial"
+          ? FREE_TIER_GENERATION_LIMIT
+          : subscription.tier === "basic"
+            ? BASIC_MONTHLY_GENERATION_LIMIT
+            : subscription.tier === "pro"
+              ? PRO_MONTHLY_GENERATION_LIMIT
+              : null;
+      if (generationLimit !== null) {
+        await trx.raw("select pg_advisory_xact_lock(hashtext(?))", [
+          `generation-allowance:${userId}`,
+        ]);
+        const periodStart =
+          subscription.tier === "free_trial"
+            ? EPOCH
+            : subscription.current_period_start;
+        const reserved =
+          await generationRepository.countReservedByUserSinceInTrx(
+            userId,
+            periodStart,
+            trx,
+          );
+        if (reserved >= generationLimit) {
+          throw new AppError(
+            403,
+            subscription.tier === "free_trial"
+              ? "Your two free try-on generations have been used"
+              : `Your ${generationLimit} try-ons for this billing period have been used`,
+          );
         }
       }
-      return generationRepository.createInTrx({
-        user_id: userId,
-        type: input.type,
-        status: "pending",
-        input_image_url: inputImageUrl,
-        garment_image_url: garment.image_url,
-        prompt: input.prompt?.trim() || null,
-      }, trx);
+      return generationRepository.createInTrx(
+        {
+          user_id: userId,
+          type: input.type,
+          status: "pending",
+          input_image_url: inputImageUrl,
+          garment_image_url: garment.image_url,
+          prompt: input.prompt?.trim() || null,
+        },
+        trx,
+      );
     });
 
     await queueGenerationJob({
@@ -58,20 +95,28 @@ export class GenerationService {
       prompt: generation.prompt ?? "",
       inputImageUrl,
       garmentImageUrl: garment.image_url,
-      garmentCategory: garment.category === "tops" || garment.category === "bottoms" || garment.category === "one-pieces"
-        ? garment.category
-        : "auto",
+      garmentCategory:
+        garment.category === "tops" ||
+        garment.category === "bottoms" ||
+        garment.category === "one-pieces"
+          ? garment.category
+          : "auto",
     });
     return generation;
   }
 
   async getGeneration(userId: string, generationId: string) {
-    const generation = await generationRepository.findByIdAndUserId(generationId, userId);
+    const generation = await generationRepository.findByIdAndUserId(
+      generationId,
+      userId,
+    );
     if (!generation) throw new AppError(404, "Generation not found");
     return generation;
   }
 
-  async listGenerations(userId: string) { return generationRepository.findAllByUserId(userId); }
+  async listGenerations(userId: string) {
+    return generationRepository.findAllByUserId(userId);
+  }
 
   private async resolveModelImage(
     userId: string,
@@ -81,25 +126,39 @@ export class GenerationService {
     profileGender?: string | null,
   ): Promise<string> {
     if (type === "generic_model") {
-      const selectedGender = genericModelGender ?? (profileGender === "male" || profileGender === "female" ? profileGender : undefined);
+      const selectedGender =
+        genericModelGender ??
+        (profileGender === "male" || profileGender === "female"
+          ? profileGender
+          : undefined);
       if (!selectedGender) {
         throw new AppError(400, "Choose a male or female generic model");
       }
-      const imageUrl = selectedGender === "male"
-        ? AppEnv.GENERIC_MALE_MODEL_IMAGE_URL
-        : AppEnv.GENERIC_FEMALE_MODEL_IMAGE_URL;
+      const imageUrl =
+        selectedGender === "male"
+          ? AppEnv.GENERIC_MALE_MODEL_IMAGE_URL
+          : AppEnv.GENERIC_FEMALE_MODEL_IMAGE_URL;
       if (!imageUrl) {
-        throw new AppError(503, `The ${selectedGender} generic model is not configured yet`);
+        throw new AppError(
+          503,
+          `The ${selectedGender} generic model is not configured yet`,
+        );
       }
       return imageUrl;
     }
 
     if (tier !== "pro" && tier !== "gold") {
-      throw new AppError(403, "Using your own photo is available on Pro and Gold plans");
+      throw new AppError(
+        403,
+        "Using your own photo is available on Pro and Gold plans",
+      );
     }
     const profile = await profileRepository.findByUserId(userId);
     if (!profile?.photo_url) {
-      throw new AppError(400, "Upload a profile photo before generating a try-on with your own image");
+      throw new AppError(
+        400,
+        "Upload a profile photo before generating a try-on with your own image",
+      );
     }
     return profile.photo_url;
   }
