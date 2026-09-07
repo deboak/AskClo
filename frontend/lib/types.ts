@@ -41,9 +41,18 @@ export interface Subscription {
 
 export interface SubscriptionOverview {
   subscription: Subscription;
-  entitlements: { genericTryOn: boolean; ownPhotoTryOn: boolean; freeGenerationLimit: number | null };
+  entitlements: {
+    genericTryOn: boolean;
+    ownPhotoTryOn: boolean;
+    freeGenerationLimit: number | null;
+  };
   daysRemaining: number;
   isActive: boolean;
 }
 
-export interface ConversationSummary { id: string; title: string; preview: string | null; lastMessageAt: string }
+export interface ConversationSummary {
+  id: string;
+  title: string;
+  preview: string | null;
+  lastMessageAt: string;
+}

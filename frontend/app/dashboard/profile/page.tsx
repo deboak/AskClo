@@ -3,4 +3,131 @@ import { FormEvent, useRef, useState } from "react";
 import { useSafeEffect as useEffect } from "@/lib/use-safe-effect";
 import { api } from "@/lib/api";
 import type { Profile } from "@/lib/types";
-export default function ProfilePage(){const [profile,setProfile]=useState<Profile|null>(null);const [message,setMessage]=useState("");const [error,setError]=useState("");const [saving,setSaving]=useState(false);const fileRef=useRef<HTMLInputElement>(null);useEffect(()=>{api<Profile>("/profile").then(setProfile).catch(e=>setError(e.message))},[]);async function save(e:FormEvent<HTMLFormElement>){e.preventDefault();setSaving(true);setError("");const d=new FormData(e.currentTarget);const payload=Object.fromEntries([...d.entries()].map(([k,v])=>[k,v||null]));try{setProfile(await api<Profile>("/profile",{method:"PATCH",body:JSON.stringify(payload)}));setMessage("Your style profile has been updated.")}catch(e){setError(e instanceof Error?e.message:"Could not save profile")}finally{setSaving(false)}}async function upload(file?:File){if(!file)return;setError("");try{const result=await api<{photoUrl:string}>("/profile/photo",{method:"POST",body:file,headers:{"Content-Type":file.type}});setProfile(p=>p?{...p,photo_url:result.photoUrl}:p);setMessage("Profile photo updated.")}catch(e){setError(e instanceof Error?e.message:"Upload failed")}}return <main className="dashPage narrowPage"><header className="dashPageHeader"><div><span className="dashEyebrow">Personal details</span><h1>Your style profile</h1><p>Give Clo the context to make every recommendation feel more like you.</p></div></header>{!profile?<div className="pageLoader">Loading your profile…</div>:<form className="profileForm" onSubmit={save}><section className="photoSetting"><div className="profilePhoto">{profile.photo_url?<img src={profile.photo_url} alt="Profile"/>:<span>+</span>}</div><div><h3>Your try-on photo</h3><p>Used only for own-photo try-ons on Pro and Gold.</p><button type="button" onClick={()=>fileRef.current?.click()}>Upload photo</button><input ref={fileRef} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>upload(e.target.files?.[0])}/></div></section>{error&&<div className="formError">{error}</div>}{message&&<div className="formSuccess">{message}</div>}<section className="settingsCard"><h2>About you</h2><div className="settingsGrid"><label>Gender<select name="gender" defaultValue={profile.gender??""}><option value="">Not specified</option><option value="female">Woman</option><option value="male">Man</option><option value="other">Another identity</option><option value="prefer_not_to_say">Prefer not to say</option></select></label><label>Age range<input name="age" defaultValue={profile.age??""} placeholder="e.g. 25–34"/></label><label>Everyday style<input name="style_preference" defaultValue={profile.style_preference??""} placeholder="e.g. Minimal and tailored"/></label><label>Body type<input name="body_type" defaultValue={profile.body_type??""} placeholder="e.g. Athletic"/></label><label className="wideField">Cultural preference<input name="cultural_preference" defaultValue={profile.cultural_preference??""} placeholder="e.g. Yoruba, with a contemporary mix"/></label></div><button className="goldAction" disabled={saving}>{saving?"Saving…":"Save changes"}</button></section></form>}</main>}
+export default function ProfilePage() {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    api<Profile>("/profile")
+      .then(setProfile)
+      .catch((e) => setError(e.message));
+  }, []);
+  async function save(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    const d = new FormData(e.currentTarget);
+    const payload = Object.fromEntries([...d.entries()].map(([k, v]) => [k, v || null]));
+    try {
+      setProfile(
+        await api<Profile>("/profile", { method: "PATCH", body: JSON.stringify(payload) }),
+      );
+      setMessage("Your style profile has been updated.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save profile");
+    } finally {
+      setSaving(false);
+    }
+  }
+  async function upload(file?: File) {
+    if (!file) return;
+    setError("");
+    try {
+      const result = await api<{ photoUrl: string }>("/profile/photo", {
+        method: "POST",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+      setProfile((p) => (p ? { ...p, photo_url: result.photoUrl } : p));
+      setMessage("Profile photo updated.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Upload failed");
+    }
+  }
+  return (
+    <main className="dashPage narrowPage">
+      <header className="dashPageHeader">
+        <div>
+          <span className="dashEyebrow">Personal details</span>
+          <h1>Your style profile</h1>
+          <p>Give Clo the context to make every recommendation feel more like you.</p>
+        </div>
+      </header>
+      {!profile ? (
+        <div className="pageLoader">Loading your profile…</div>
+      ) : (
+        <form className="profileForm" onSubmit={save}>
+          <section className="photoSetting">
+            <div className="profilePhoto">
+              {profile.photo_url ? <img src={profile.photo_url} alt="Profile" /> : <span>+</span>}
+            </div>
+            <div>
+              <h3>Your try-on photo</h3>
+              <p>Used only for own-photo try-ons on Pro and Gold.</p>
+              <button type="button" onClick={() => fileRef.current?.click()}>
+                Upload photo
+              </button>
+              <input
+                ref={fileRef}
+                hidden
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => upload(e.target.files?.[0])}
+              />
+            </div>
+          </section>
+          {error && <div className="formError">{error}</div>}
+          {message && <div className="formSuccess">{message}</div>}
+          <section className="settingsCard">
+            <h2>About you</h2>
+            <div className="settingsGrid">
+              <label>
+                Gender
+                <select name="gender" defaultValue={profile.gender ?? ""}>
+                  <option value="">Not specified</option>
+                  <option value="female">Woman</option>
+                  <option value="male">Man</option>
+                  <option value="other">Another identity</option>
+                  <option value="prefer_not_to_say">Prefer not to say</option>
+                </select>
+              </label>
+              <label>
+                Age range
+                <input name="age" defaultValue={profile.age ?? ""} placeholder="e.g. 25–34" />
+              </label>
+              <label>
+                Everyday style
+                <input
+                  name="style_preference"
+                  defaultValue={profile.style_preference ?? ""}
+                  placeholder="e.g. Minimal and tailored"
+                />
+              </label>
+              <label>
+                Body type
+                <input
+                  name="body_type"
+                  defaultValue={profile.body_type ?? ""}
+                  placeholder="e.g. Athletic"
+                />
+              </label>
+              <label className="wideField">
+                Cultural preference
+                <input
+                  name="cultural_preference"
+                  defaultValue={profile.cultural_preference ?? ""}
+                  placeholder="e.g. Yoruba, with a contemporary mix"
+                />
+              </label>
+            </div>
+            <button className="goldAction" disabled={saving}>
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          </section>
+        </form>
+      )}
+    </main>
+  );
+}

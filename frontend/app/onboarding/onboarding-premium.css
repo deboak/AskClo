@@ -1,1 +1,100 @@
-.onboardingPage{background:linear-gradient(145deg,#fbfaf7,#f2efe8)}.onboardingPage>header{height:90px;padding:0 52px;background:rgba(251,250,247,.78);backdrop-filter:blur(22px)}.onboardingPage>header>span{font-size:11px}.onboardingPage>header>button{font-size:13px;padding:10px}.onboardingProgress{height:4px}.onboardingPage>form{width:min(820px,calc(100% - 40px));margin:90px auto}.onboardingPage section h1{font-size:clamp(50px,6vw,72px);margin:23px 0 17px}.onboardingPage section>p{font-size:17px;max-width:650px;margin-bottom:50px}.onboardingPage section>label{font-family:var(--font-body);font-size:15px;letter-spacing:0;text-transform:none;margin:34px 0 15px}.choiceGrid{gap:13px}.choiceGrid button{min-height:68px;border-radius:17px;padding:17px 19px;font-size:15px;border-color:#ded9cf;box-shadow:0 8px 24px rgba(18,20,26,.035)}.choiceGrid button:hover{transform:translateY(-2px);border-color:#bd9951;box-shadow:0 14px 30px rgba(18,20,26,.08)}.choiceGrid button.selected{border-color:#c18f32;background:#fbf2df;box-shadow:0 10px 30px rgba(193,143,50,.1)}.choiceGrid svg{width:18px}.onboardingNote{margin-top:45px;border-radius:17px;padding:20px;font-size:13px}.onboardingPage form>footer{margin-top:58px;padding-top:28px}.onboardingPage .submitButton{padding:16px 27px;font-size:14px}.backButton{font-size:14px;padding:12px}@media(max-width:700px){.onboardingPage>header{height:76px;padding:0 20px}.onboardingPage>form{margin:55px auto}.onboardingPage section h1{font-size:45px}.choiceGrid,.choiceGrid.compact{grid-template-columns:1fr}.choiceGrid button{min-height:60px}}
+.onboardingPage {
+  background: linear-gradient(145deg, #fbfaf7, #f2efe8);
+}
+.onboardingPage > header {
+  height: 90px;
+  padding: 0 52px;
+  background: rgba(251, 250, 247, 0.78);
+  backdrop-filter: blur(22px);
+}
+.onboardingPage > header > span {
+  font-size: 11px;
+}
+.onboardingPage > header > button {
+  font-size: 13px;
+  padding: 10px;
+}
+.onboardingProgress {
+  height: 4px;
+}
+.onboardingPage > form {
+  width: min(820px, calc(100% - 40px));
+  margin: 90px auto;
+}
+.onboardingPage section h1 {
+  font-size: clamp(50px, 6vw, 72px);
+  margin: 23px 0 17px;
+}
+.onboardingPage section > p {
+  font-size: 17px;
+  max-width: 650px;
+  margin-bottom: 50px;
+}
+.onboardingPage section > label {
+  font-family: var(--font-body);
+  font-size: 15px;
+  letter-spacing: 0;
+  text-transform: none;
+  margin: 34px 0 15px;
+}
+.choiceGrid {
+  gap: 13px;
+}
+.choiceGrid button {
+  min-height: 68px;
+  border-radius: 17px;
+  padding: 17px 19px;
+  font-size: 15px;
+  border-color: #ded9cf;
+  box-shadow: 0 8px 24px rgba(18, 20, 26, 0.035);
+}
+.choiceGrid button:hover {
+  transform: translateY(-2px);
+  border-color: #bd9951;
+  box-shadow: 0 14px 30px rgba(18, 20, 26, 0.08);
+}
+.choiceGrid button.selected {
+  border-color: #c18f32;
+  background: #fbf2df;
+  box-shadow: 0 10px 30px rgba(193, 143, 50, 0.1);
+}
+.choiceGrid svg {
+  width: 18px;
+}
+.onboardingNote {
+  margin-top: 45px;
+  border-radius: 17px;
+  padding: 20px;
+  font-size: 13px;
+}
+.onboardingPage form > footer {
+  margin-top: 58px;
+  padding-top: 28px;
+}
+.onboardingPage .submitButton {
+  padding: 16px 27px;
+  font-size: 14px;
+}
+.backButton {
+  font-size: 14px;
+  padding: 12px;
+}
+@media (max-width: 700px) {
+  .onboardingPage > header {
+    height: 76px;
+    padding: 0 20px;
+  }
+  .onboardingPage > form {
+    margin: 55px auto;
+  }
+  .onboardingPage section h1 {
+    font-size: 45px;
+  }
+  .choiceGrid,
+  .choiceGrid.compact {
+    grid-template-columns: 1fr;
+  }
+  .choiceGrid button {
+    min-height: 60px;
+  }
+}

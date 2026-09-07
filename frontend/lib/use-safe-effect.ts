@@ -8,6 +8,6 @@ type EffectResult = void | (() => void) | Promise<unknown> | unknown;
 export function useSafeEffect(effect: () => EffectResult, dependencies?: DependencyList) {
   useReactEffect(() => {
     const result = effect();
-    return typeof result === "function" ? result as () => void : undefined;
+    return typeof result === "function" ? (result as () => void) : undefined;
   }, dependencies);
 }

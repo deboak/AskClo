@@ -25,13 +25,22 @@ interface ApiEnvelope<T> {
 }
 
 export class ApiError extends Error {
-  constructor(message: string, public status: number) { super(message); }
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
 }
 
 export function getSession(): AuthData | null {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem("askclo_session");
-  try { return raw ? JSON.parse(raw) as AuthData : null; } catch { return null; }
+  try {
+    return raw ? (JSON.parse(raw) as AuthData) : null;
+  } catch {
+    return null;
+  }
 }
 
 export function setSession(session: AuthData | null) {
@@ -48,10 +57,13 @@ async function rawRequest<T>(path: string, init: RequestInit, token?: string): P
       ...init.headers,
     },
   });
-  const body = await response.json().catch(() => ({})) as ApiEnvelope<T>;
+  const body = (await response.json().catch(() => ({}))) as ApiEnvelope<T>;
   if (!response.ok || body.success === false || body.status === "error") {
     const detail = body.details?.[0]?.message;
-    throw new ApiError(detail ?? body.error ?? body.message ?? "Something went wrong", response.status);
+    throw new ApiError(
+      detail ?? body.error ?? body.message ?? "Something went wrong",
+      response.status,
+    );
   }
   return body.data as T;
 }
@@ -61,9 +73,11 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   try {
     return await rawRequest<T>(path, init, session?.access_token);
   } catch (error) {
-    if (!(error instanceof ApiError) || error.status !== 401 || !session?.refresh_token) throw error;
+    if (!(error instanceof ApiError) || error.status !== 401 || !session?.refresh_token)
+      throw error;
     const refreshed = await rawRequest<AuthData>("/auth/refresh", {
-      method: "POST", body: JSON.stringify({ refresh_token: session.refresh_token }),
+      method: "POST",
+      body: JSON.stringify({ refresh_token: session.refresh_token }),
     });
     session = refreshed;
     setSession(refreshed);

@@ -29,7 +29,7 @@ const config = {
       idleTimeoutMillis: 30000,
       reapIntervalMillis: 1000,
     },
-    debug: true, // logs every SQL query to the console — useful locally, noisy in prod
+    debug: false,
   },
 
   production: {
