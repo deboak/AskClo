@@ -2789,9 +2789,12 @@
   .conversationRoom > header .chatHeaderActions {
     position: absolute;
     right: auto;
-    left: min(calc(50% + 42px), calc(100% - 101px));
+    left: min(calc(50% + 42px), calc(100% - 112px));
     width: max-content;
     max-width: none;
+    display: flex;
+    grid-template-columns: none;
+    gap: 8px;
   }
 
   .conversationRoom > header .chatHeaderActions > button {
