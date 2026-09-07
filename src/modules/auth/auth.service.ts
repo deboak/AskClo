@@ -153,10 +153,20 @@ export class AuthService {
     }
 
     if (!user.email_verified && !user.phone_verified) {
-      throw new AppError(
-        403,
-        "Verify your email or phone number before signing in",
-      );
+      const code = await this.otpStore.create(user.id, "phone");
+      if (
+        process.env.NODE_ENV === "production" &&
+        !fixedOtpIsEnabled() &&
+        user.phone_number
+      ) {
+        await queueOtpJob({
+          userId: user.id,
+          method: "phone",
+          recipient: user.phone_number,
+          code,
+        });
+      }
+      return issueProvisionalAccessToken(user);
     }
 
     return issueTokens(user);

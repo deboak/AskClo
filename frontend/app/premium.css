@@ -483,11 +483,22 @@ footer {
     min-height: auto;
     padding-top: 150px;
   }
+  .heroGrid {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 64px;
+  }
+  .heroCopy,
+  .heroVisual {
+    min-width: 0;
+  }
   .heroCopy h1 {
     font-size: clamp(58px, 10vw, 82px);
   }
   .heroVisual {
     width: min(86%, 500px);
+    margin: 0 auto;
   }
   .sectionHeading > p,
   .looksHeader > p {
@@ -711,7 +722,22 @@ footer {
   }
 
   .heroSection {
-    padding: 104px 0 64px;
+    min-height: auto;
+    padding: 104px 0 72px;
+    overflow: hidden;
+  }
+
+  .heroGrid {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 46px;
+  }
+
+  .heroCopy {
+    width: 100%;
+    min-width: 0;
+    text-align: left;
   }
 
   .heroCopy h1 {
@@ -722,24 +748,49 @@ footer {
   .heroCopy > p {
     font-size: 16px;
     line-height: 1.65;
+    margin-left: 0;
+    margin-right: 0;
   }
 
-  .heroActions,
-  .heroActions > a {
+  .heroActions {
     width: 100%;
+    align-items: stretch;
+    margin: 32px 0 38px;
   }
 
-  .heroActions > a {
+  .heroActions .primaryButton {
+    width: 100%;
     min-height: 52px;
+  }
+
+  .watchLink {
+    min-height: 48px;
+    justify-content: center;
   }
 
   .proof {
     width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 12px;
+    padding-top: 22px;
+  }
+
+  .proof p {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+  }
+
+  .proof strong {
+    font-size: 13px;
   }
 
   .heroVisual {
     width: 100%;
+    max-width: 440px;
+    min-width: 0;
+    margin: 0 auto;
   }
 
   .imageMat {
@@ -750,7 +801,16 @@ footer {
   .styleCard {
     width: calc(100% - 20px);
     left: 10px;
+    right: auto;
+    bottom: 14px;
     padding: 16px;
+  }
+
+  .floatingSpark {
+    right: 12px;
+    top: 20px;
+    width: 52px;
+    height: 52px;
   }
 
   .statement,
