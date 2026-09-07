@@ -24,6 +24,11 @@ export default function LoginPage() {
         }),
       });
       setSession(session);
+      if (session.verification_required) {
+        sessionStorage.setItem("askclo_phone", session.user.phone_number);
+        router.push("/verify");
+        return;
+      }
       router.push("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not sign in");
