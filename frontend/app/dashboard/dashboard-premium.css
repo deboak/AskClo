@@ -2362,3 +2362,153 @@
     font-size: 9px;
   }
 }
+
+/* Mobile chat viewport: header, messages, composer, then tab bar */
+@media (max-width: 850px) {
+  .dashboardShell:has(.dashChat),
+  .dashboardShell:has(.dashChat) .dashboardBody {
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .dashboardBody:has(.dashChat) {
+    position: relative;
+    padding: 0;
+  }
+
+  .dashboardBody:has(.dashChat) > .mobileDashHeader {
+    position: absolute;
+    inset: 0 0 auto;
+  }
+
+  .dashboardBody:has(.dashChat) .dashChat {
+    position: absolute;
+    top: calc(56px + env(safe-area-inset-top));
+    right: 0;
+    bottom: calc(82px + env(safe-area-inset-bottom));
+    left: 0;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    display: block;
+    overflow: hidden;
+  }
+
+  .conversationRoom {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: 58px minmax(0, 1fr) auto;
+    overflow: hidden;
+  }
+
+  .conversationRoom > header {
+    width: 100%;
+    height: 58px;
+    min-width: 0;
+  }
+
+  .conversationScroll {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 18px 14px;
+    overscroll-behavior: contain;
+  }
+
+  .dashMessages,
+  .dashChatWelcome {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .dashChatWelcome {
+    margin: 18px auto 24px;
+    padding: 0 2px;
+  }
+
+  .dashChatWelcome > span {
+    width: 52px;
+    height: 52px;
+  }
+
+  .dashChatWelcome h1,
+  .navCollapsed .dashChatWelcome h1 {
+    margin: 16px auto 10px;
+    font-size: clamp(30px, 8.5vw, 38px);
+    line-height: 1.02;
+  }
+
+  .dashChatWelcome > p {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .dashChatWelcome > div {
+    margin-top: 20px;
+  }
+
+  .dashComposer {
+    position: static;
+    inset: auto;
+    transform: none;
+    width: auto;
+    min-width: 0;
+    margin: 8px 12px 10px;
+    padding: 7px 7px 7px 15px;
+    flex-shrink: 0;
+  }
+
+  .dashComposer textarea {
+    width: 100%;
+    min-width: 0;
+    max-height: 92px;
+  }
+
+  .conversationList {
+    display: none;
+  }
+
+  .conversationList.mobileOpen {
+    position: fixed;
+    z-index: 60;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(330px, 88vw);
+    height: 100dvh;
+    max-height: none;
+    display: flex;
+    padding: calc(22px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));
+    overflow: hidden;
+    background: #f4f3ef;
+    box-shadow: 28px 0 80px rgba(11, 16, 32, 0.24);
+  }
+
+  .conversationList.mobileOpen .conversationItems {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .conversationList.mobileOpen::after {
+    display: none;
+  }
+}
+
+@media (max-width: 390px) {
+  .conversationScroll {
+    padding: 14px 10px;
+  }
+
+  .dashComposer {
+    margin-right: 8px;
+    margin-left: 8px;
+  }
+}
