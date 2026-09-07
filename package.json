@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
+    "render:build": "npm run build && npm run db:migrate",
     "build:web": "npm --prefix frontend run build",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",

@@ -9,6 +9,19 @@ import type { VerificationMethod } from "./auth.service";
 const OTP_TTL_SECONDS = 10 * 60;
 const OTP_HASH_ROUNDS = 10;
 
+function configuredFixedOtp(): string | undefined {
+  const value = process.env.FIXED_OTP_CODE?.trim();
+  if (!value) return undefined;
+  if (!/^\d{6}$/.test(value)) {
+    throw new Error("FIXED_OTP_CODE must contain exactly 6 digits");
+  }
+  return value;
+}
+
+export function fixedOtpIsEnabled(): boolean {
+  return configuredFixedOtp() !== undefined;
+}
+
 export class OtpStore {
   constructor(private readonly client: Redis) {}
 
@@ -17,14 +30,22 @@ export class OtpStore {
   }
 
   async create(userId: string, method: VerificationMethod): Promise<string> {
-    const code = process.env.NODE_ENV === "production"
-      ? randomInt(100_000, 1_000_000).toString()
-      : "000000";
+    const fixedCode = configuredFixedOtp();
+    const code =
+      fixedCode ??
+      (process.env.NODE_ENV === "production"
+        ? randomInt(100_000, 1_000_000).toString()
+        : "000000");
     const codeHash = await bcrypt.hash(code, OTP_HASH_ROUNDS);
-    await this.client.set(this.key(userId, method), codeHash, "EX", OTP_TTL_SECONDS);
+    await this.client.set(
+      this.key(userId, method),
+      codeHash,
+      "EX",
+      OTP_TTL_SECONDS,
+    );
 
-    if (process.env.NODE_ENV !== "production") {
-      logger.info({ userId, method }, "Development verification OTP generated: 000000");
+    if (fixedCode || process.env.NODE_ENV !== "production") {
+      logger.info({ userId, method }, "Fixed verification OTP generated");
     }
 
     return code;
@@ -34,7 +55,11 @@ export class OtpStore {
     await this.client.del(this.key(userId, method));
   }
 
-  async verify(userId: string, method: VerificationMethod, code: string): Promise<void> {
+  async verify(
+    userId: string,
+    method: VerificationMethod,
+    code: string,
+  ): Promise<void> {
     const key = this.key(userId, method);
     const codeHash = await this.client.get(key);
 
