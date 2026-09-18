@@ -4,19 +4,12 @@ import Link from "next/link";
 import { FormEvent, useRef, useState } from "react";
 import { Send } from "@/components/icons";
 import { api } from "@/lib/api";
-import type { ConversationSummary } from "@/lib/types";
+import type { ConversationSummary, Generation, SubscriptionOverview } from "@/lib/types";
 import { useSafeEffect as useEffect } from "@/lib/use-safe-effect";
 
-interface Slots {
-  occasion: string | null;
-  style: string | null;
-  colour: string | null;
-  constraints: string | null;
-}
 interface Turn {
   conversationId: string;
   reply: string;
-  slots: Slots;
   readyToGenerate: boolean;
 }
 interface Message {
@@ -24,10 +17,9 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   created_at?: string;
-  metadata?: { slots?: Slots; ready_to_generate?: boolean };
+  metadata?: { ready_to_generate?: boolean };
 }
 
-const blank: Slots = { occasion: null, style: null, colour: null, constraints: null };
 const suggestions = [
   "Owambe this weekend",
   "A relaxed dinner date",
@@ -39,20 +31,29 @@ export default function DashboardChat() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [active, setActive] = useState<string>();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [slots, setSlots] = useState(blank);
   const [ready, setReady] = useState(false);
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [briefOpen, setBriefOpen] = useState(false);
+  const [chatsCollapsed, setChatsCollapsed] = useState(false);
+  const [plan, setPlan] = useState<SubscriptionOverview | null>(null);
+  const [generations, setGenerations] = useState<Generation[]>([]);
   const scrollArea = useRef<HTMLDivElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
   const conversationRequest = useRef(0);
 
   useEffect(() => {
-    void api<ConversationSummary[]>("/chat/conversations")
-      .then(setConversations)
+    void Promise.all([
+      api<ConversationSummary[]>("/chat/conversations"),
+      api<SubscriptionOverview>("/subscriptions/current"),
+      api<Generation[]>("/generations"),
+    ])
+      .then(([savedConversations, subscription, savedGenerations]) => {
+        setConversations(savedConversations);
+        setPlan(subscription);
+        setGenerations(savedGenerations);
+      })
       .catch((error) => setError(error.message))
       .finally(() => setLoading(false));
   }, []);
@@ -72,9 +73,9 @@ export default function DashboardChat() {
       const history = await api<Message[]>(`/chat/conversations/${id}/messages`);
       if (requestId !== conversationRequest.current) return;
       setMessages(history);
-      const metadata = [...history].reverse().find((message) => message.metadata?.slots)?.metadata;
-      if (metadata?.slots) setSlots(metadata.slots);
-      else setSlots(blank);
+      const metadata = [...history]
+        .reverse()
+        .find((message) => message.metadata?.ready_to_generate !== undefined)?.metadata;
       setReady(Boolean(metadata?.ready_to_generate));
     } catch (error) {
       if (requestId !== conversationRequest.current) return;
@@ -88,13 +89,19 @@ export default function DashboardChat() {
     conversationRequest.current += 1;
     setActive(undefined);
     setMessages([]);
-    setSlots(blank);
     setReady(false);
     setError("");
     setLoading(false);
     setHistoryOpen(false);
-    setBriefOpen(false);
     requestAnimationFrame(() => composer.current?.focus());
+  }
+
+  function toggleChats() {
+    if (window.matchMedia("(max-width: 850px)").matches) {
+      setHistoryOpen(true);
+      return;
+    }
+    setChatsCollapsed((collapsed) => !collapsed);
   }
 
   async function sendMessage(content: string) {
@@ -120,7 +127,6 @@ export default function DashboardChat() {
         },
       );
       setActive(turn.conversationId);
-      setSlots(turn.slots);
       setReady(turn.readyToGenerate);
       setMessages((current) => [
         ...current,
@@ -147,10 +153,31 @@ export default function DashboardChat() {
     void sendMessage(value);
   }
 
-  const completed = Object.values(slots).filter(Boolean).length;
+  const latestAssistantId = [...messages]
+    .reverse()
+    .find((message) => message.role === "assistant")?.id;
+  const generationLimit =
+    plan?.subscription.tier === "free_trial"
+      ? plan.entitlements.freeGenerationLimit
+      : plan?.entitlements.monthlyGenerationLimit;
+  const allowanceStart =
+    plan?.subscription.tier === "free_trial"
+      ? 0
+      : new Date(plan?.subscription.current_period_start ?? 0).getTime();
+  const usedGenerations = generations.filter(
+    (generation) =>
+      generation.status !== "failed" && new Date(generation.created_at).getTime() >= allowanceStart,
+  ).length;
+  const canGenerateTryOn = Boolean(
+    plan?.isActive &&
+    plan.entitlements.genericTryOn &&
+    (generationLimit === null ||
+      generationLimit === undefined ||
+      usedGenerations < generationLimit),
+  );
 
   return (
-    <main className="dashChat">
+    <main className={`dashChat ${chatsCollapsed ? "chatsCollapsed" : ""}`}>
       <aside className={`conversationList ${historyOpen ? "mobileOpen" : ""}`}>
         <div className="conversationListHeader">
           <div>
@@ -194,7 +221,12 @@ export default function DashboardChat() {
 
       <section className="conversationRoom">
         <header>
-          <button className="historyToggle" onClick={() => setHistoryOpen(true)}>
+          <button
+            className="historyToggle"
+            onClick={toggleChats}
+            aria-label={chatsCollapsed ? "Show chats" : "Hide chats"}
+            aria-expanded={!chatsCollapsed}
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 7h14M5 12h14M5 17h9" />
             </svg>
@@ -204,12 +236,6 @@ export default function DashboardChat() {
             <i />
             <strong>Clo</strong>
             <span>Personal stylist</span>
-          </div>
-          <div className="chatHeaderActions">
-            <button className="briefToggle" onClick={() => setBriefOpen(true)}>
-              Brief
-            </button>
-            {active && <button onClick={newConversation}>New</button>}
           </div>
         </header>
         <div className="conversationScroll" ref={scrollArea}>
@@ -231,6 +257,20 @@ export default function DashboardChat() {
                           })
                         : ""}
                     </time>
+                    {ready && canGenerateTryOn && message.id === latestAssistantId && (
+                      <div className="readyTryOnCard">
+                        <span aria-hidden="true">✓</span>
+                        <div>
+                          <strong>Your look is ready to generate</strong>
+                          <p>
+                            {generationLimit === null || generationLimit === undefined
+                              ? "Your plan includes virtual try-ons."
+                              : `${Math.max(0, generationLimit - usedGenerations)} try-on${generationLimit - usedGenerations === 1 ? "" : "s"} remaining.`}
+                          </p>
+                        </div>
+                        <Link href="/dashboard/try-ons">Create try-on</Link>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -287,48 +327,12 @@ export default function DashboardChat() {
         </form>
       </section>
 
-      <aside className={`chatBrief ${briefOpen ? "mobileOpen" : ""}`}>
-        <button
-          className="briefClose"
-          type="button"
-          onClick={() => setBriefOpen(false)}
-          aria-label="Close style brief"
-        >
-          ×
-        </button>
-        <span className="dashEyebrow">Style brief</span>
-        <h2>{ready ? "Ready for a try-on" : "Building your look"}</h2>
-        {(["occasion", "style", "colour", "constraints"] as const).map((key, index) => (
-          <div className={slots[key] ? "complete" : ""} key={key}>
-            <span>{slots[key] ? "✓" : `0${index + 1}`}</span>
-            <p>
-              <small>{key}</small>
-              <strong>{slots[key] || "Not added yet"}</strong>
-            </p>
-          </div>
-        ))}
-        <footer>
-          <strong>{ready ? "Outfit direction complete" : `${completed} of 4 details added`}</strong>
-          <i>
-            <span style={{ width: `${completed * 25}%` }} />
-          </i>
-          <p>
-            {ready
-              ? "Use this direction when creating a virtual outfit try-on."
-              : "Clo will ask for the remaining details."}
-          </p>
-          <Link className="briefAction" href="/dashboard/try-ons">
-            {ready ? "Create a try-on" : "Open try-on studio"} →
-          </Link>
-        </footer>
-      </aside>
-      {(historyOpen || briefOpen) && (
+      {historyOpen && (
         <button
           className="chatPanelBackdrop"
           type="button"
           onClick={() => {
             setHistoryOpen(false);
-            setBriefOpen(false);
           }}
           aria-label="Close chat panel"
         />

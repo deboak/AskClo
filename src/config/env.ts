@@ -111,7 +111,6 @@ export const Paystack = {
   WEBHOOK_SECRET: process.env.PAYSTACK_WEBHOOK_SECRET,
   BASIC_PLAN_CODE: process.env.PAYSTACK_BASIC_PLAN_CODE,
   PRO_PLAN_CODE: process.env.PAYSTACK_PRO_PLAN_CODE,
-  GOLD_PLAN_CODE: process.env.PAYSTACK_GOLD_PLAN_CODE,
 };
 
 export const WebPush = {

@@ -13,7 +13,7 @@ export async function up(knex: Knex): Promise<void> {
         .onDelete("CASCADE");
 
         table
-        .enum("tier", ["free_trial", "basic", "pro", "gold"])
+        .enum("tier", ["free_trial", "basic", "pro"])
         .notNullable()
         .defaultTo("free_trial");
         table
@@ -35,4 +35,3 @@ export async function up(knex: Knex): Promise<void> {
 export async function down(knex: Knex): Promise<void> {
     await knex.schema.dropTable("subscriptions");
 }
-

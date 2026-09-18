@@ -34,7 +34,6 @@ export class SubscriptionController {
         free_trial: this.service.getTierEntitlements("free_trial"),
         basic: this.service.getTierEntitlements("basic"),
         pro: this.service.getTierEntitlements("pro"),
-        gold: this.service.getTierEntitlements("gold"),
       }, { message: "Subscription entitlements retrieved successfully" });
     } catch (error) {
       next(error);

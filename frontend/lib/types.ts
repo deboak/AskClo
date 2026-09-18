@@ -32,7 +32,7 @@ export interface Generation {
 
 export interface Subscription {
   id: string;
-  tier: "free_trial" | "basic" | "pro" | "gold";
+  tier: "free_trial" | "basic" | "pro";
   status: "active" | "expired" | "cancelled" | "past_due";
   current_period_start: string;
   current_period_end: string;

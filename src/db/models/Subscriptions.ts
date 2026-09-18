@@ -7,12 +7,13 @@ export class SubscriptionModel extends Model {
 
     id!: string;
     user_id!: string;
-    tier!: "free_trial" | "basic" | "pro" | "gold";
+    tier!: "free_trial" | "basic" | "pro";
     status!: "active" | "expired" | "cancelled" | "past_due";
     current_period_start!: string;
     current_period_end!: string;
     paystack_customer_id?: string;
     paystack_subscription_code?: string;
+    paystack_email_token?: string;
     cancel_at_period_end!: boolean;
     created_at!: Date;
     updated_at!: Date;

@@ -2366,6 +2366,7 @@
 /* Mobile chat controls and style brief */
 .briefClose,
 .briefToggle,
+.mobileBriefCard,
 .chatPanelBackdrop {
   display: none;
 }
@@ -2545,6 +2546,129 @@
   }
 }
 
+.readyTryOnCard {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid rgba(57, 116, 88, 0.16);
+  border-radius: 18px;
+  background: rgba(239, 247, 242, 0.96);
+  box-shadow: 0 10px 30px rgba(18, 20, 26, 0.06);
+}
+
+.readyTryOnCard > span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #397458;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.readyTryOnCard strong {
+  display: block;
+  color: #25262c;
+  font-size: 13px;
+}
+
+.dashMessage .readyTryOnCard p {
+  margin: 3px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #6f7773;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.readyTryOnCard > a {
+  padding: 10px 13px;
+  border-radius: 999px;
+  background: #151b31;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 430px) {
+  .readyTryOnCard {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .readyTryOnCard > span {
+    width: 34px;
+    height: 34px;
+  }
+
+  .readyTryOnCard > a {
+    grid-column: 1 / -1;
+    text-align: center;
+  }
+}
+
+/* Simplified chat header and collapsible desktop conversation list. */
+.chatBrief,
+.mobileBriefCard {
+  display: none !important;
+}
+
+@media (min-width: 851px) {
+  .dashChat {
+    grid-template-columns: 270px minmax(0, 1fr);
+  }
+
+  .dashChat.chatsCollapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashChat.chatsCollapsed > .conversationList {
+    display: none;
+  }
+
+  .conversationRoom > header {
+    justify-content: flex-start;
+  }
+
+  .conversationRoom > header > div {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .conversationRoom > header .historyToggle {
+    min-height: 40px;
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px !important;
+    border: 1px solid rgba(18, 20, 26, 0.09) !important;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78) !important;
+    color: #34353a !important;
+    box-shadow: 0 5px 16px rgba(18, 20, 26, 0.05) !important;
+  }
+
+  .conversationRoom > header .historyToggle svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+  }
+}
+
 /* Keep mobile chat header actions inside the viewport */
 @media (max-width: 850px) {
   .conversationRoom > header {
@@ -2660,6 +2784,63 @@
     overflow-y: auto;
     padding: 18px 14px;
     overscroll-behavior: contain;
+  }
+
+  .mobileBriefCard {
+    width: 100%;
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 0 0 18px;
+    padding: 10px 12px 10px 16px;
+    border: 1px solid rgba(18, 20, 26, 0.08);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.82);
+    color: #25262b;
+    text-align: left;
+    box-shadow: 0 8px 24px rgba(18, 20, 26, 0.055);
+  }
+
+  .mobileBriefCard > span {
+    min-width: 0;
+  }
+
+  .mobileBriefCard small,
+  .mobileBriefCard strong {
+    display: block;
+  }
+
+  .mobileBriefCard small {
+    margin-bottom: 3px;
+    color: #9b742b;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mobileBriefCard strong {
+    overflow: hidden;
+    color: #35363c;
+    font-size: 13px;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobileBriefCard > i {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #f0e4c8;
+    color: #8d651c;
+    font-size: 24px;
+    font-style: normal;
   }
 
   .dashMessages,
@@ -2800,4 +2981,37 @@
   .conversationRoom > header .chatHeaderActions > button {
     flex: 0 0 auto;
   }
+}
+
+/* Match saved conversation rows to the New chat pill. */
+.conversationListHeader > button:last-child,
+.conversationItems > button {
+  box-sizing: border-box;
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  border-radius: 999px !important;
+  font-size: 13px;
+}
+
+.conversationItems > button {
+  flex-basis: 44px;
+  padding: 7px !important;
+  background: #151b31 !important;
+  color: #fff;
+}
+
+.conversationItems > button:hover,
+.conversationItems > button.active {
+  background: #151b31 !important;
+}
+
+.conversationItems > button .conversationSummary > strong {
+  color: #fff !important;
+  font-size: 13px;
+}
+
+.conversationItems > button > i {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f1d48c;
 }

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useSafeEffect as useEffect } from "@/lib/use-safe-effect";
 import { api } from "@/lib/api";
 import type { SubscriptionOverview } from "@/lib/types";
@@ -22,27 +23,39 @@ const tiers = [
     note: "35 virtual try-ons each month",
     features: ["Everything in Basic", "35 virtual try-ons each month", "Use your own photo"],
   },
-  {
-    id: "gold",
-    name: "Gold",
-    price: "₦14,500",
-    note: "Your complete wardrobe",
-    features: ["Everything in Pro", "Outfit calendar", "Highest try-on allowance"],
-  },
 ];
 export default function SubscriptionPage() {
+  const params = useSearchParams();
   const [overview, setOverview] = useState<SubscriptionOverview | null>(null);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
   const [notice, setNotice] = useState("");
   useEffect(() => {
-    api<SubscriptionOverview>("/subscriptions/current")
-      .then(setOverview)
-      .catch((e) => setError(e.message));
-  }, []);
+    const reference = params.get("reference") || params.get("trxref");
+    if (!reference) {
+      api<SubscriptionOverview>("/subscriptions/current")
+        .then(setOverview)
+        .catch((e) => setError(e.message));
+      return;
+    }
+
+    setBusy("verify");
+    api<{ subscription: SubscriptionOverview }>(
+      `/payments/verify/${encodeURIComponent(reference)}`,
+    )
+      .then((result) => {
+        setOverview(result.subscription);
+        setNotice("Payment confirmed. Your new plan is now active.");
+        window.history.replaceState({}, "", "/dashboard/subscription");
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "Payment verification failed"))
+      .finally(() => setBusy(""));
+  }, [params]);
   async function checkout(tier: string) {
+    if (busy) return;
     setBusy(tier);
-    setError("");
+    setCheckoutError("");
     try {
       const result = await api<{ authorizationUrl: string }>("/payments/checkout", {
         method: "POST",
@@ -50,7 +63,7 @@ export default function SubscriptionPage() {
       });
       window.location.assign(result.authorizationUrl);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Checkout could not be started");
+      setCheckoutError(e instanceof Error ? e.message : "Checkout could not be started");
       setBusy("");
     }
   }
@@ -79,6 +92,7 @@ export default function SubscriptionPage() {
       </header>
       {error && <div className="formError">{error}</div>}
       {notice && <div className="formSuccess">{notice}</div>}
+      {busy === "verify" && <div className="pageLoader">Confirming your paymentâ€¦</div>}
       {overview && (
         <section className="currentPlan">
           <div>
@@ -127,6 +141,7 @@ export default function SubscriptionPage() {
         <span className="dashEyebrow">Available plans</span>
         <h2>More room to experiment</h2>
       </div>
+      {checkoutError && <div className="formError">{checkoutError}</div>}
       <section className="billingPlans">
         {tiers.map((t) => (
           <article className={overview?.subscription.tier === t.id ? "current" : ""} key={t.id}>
@@ -143,10 +158,10 @@ export default function SubscriptionPage() {
               ))}
             </ul>
             <button
-              disabled={busy === t.id || overview?.subscription.tier === t.id}
+              disabled={Boolean(busy) || (overview?.isActive && overview.subscription.tier === t.id)}
               onClick={() => checkout(t.id)}
             >
-              {overview?.subscription.tier === t.id
+              {overview?.isActive && overview.subscription.tier === t.id
                 ? "Current plan"
                 : busy === t.id
                   ? "Opening checkout…"

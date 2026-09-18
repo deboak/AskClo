@@ -5,8 +5,9 @@ import {
 } from "../../db/repositories/SubscriptionRepository";
 import { AppError } from "../../utils/appError";
 import { logger } from "../../utils/logger";
+import { Paystack } from "../../config/env";
 
-export type SubscriptionTier = "free_trial" | "basic" | "pro" | "gold";
+export type SubscriptionTier = "free_trial" | "basic" | "pro";
 export type PaidSubscriptionTier = Exclude<SubscriptionTier, "free_trial">;
 
 const TIER_ENTITLEMENTS: Record<
@@ -35,12 +36,6 @@ const TIER_ENTITLEMENTS: Record<
     ownPhotoTryOn: true,
     freeGenerationLimit: null,
     monthlyGenerationLimit: 35,
-  },
-  gold: {
-    genericTryOn: true,
-    ownPhotoTryOn: true,
-    freeGenerationLimit: null,
-    monthlyGenerationLimit: null,
   },
 };
 
@@ -122,6 +117,26 @@ export class SubscriptionService {
     if (!current)
       throw new AppError(404, "No active subscription found for this account");
     if (current.cancel_at_period_end) return current;
+    if (current.paystack_subscription_code) {
+      if (!Paystack.SECRET_KEY || !current.paystack_email_token) {
+        throw new AppError(503, "Subscription cancellation is not configured correctly");
+      }
+      const response = await fetch(`${Paystack.BASE_URL}/subscription/disable`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Paystack.SECRET_KEY}`,
+        },
+        body: JSON.stringify({
+          code: current.paystack_subscription_code,
+          token: current.paystack_email_token,
+        }),
+      });
+      if (!response.ok) {
+        logger.error({ userId, status: response.status }, "Paystack subscription cancellation failed");
+        throw new AppError(502, "Unable to cancel the recurring payment");
+      }
+    }
     const subscription = await this.subscriptionRepo.updateById(current.id, {
       cancel_at_period_end: true,
     });

@@ -2,7 +2,7 @@ import { subscriptionRepository } from "../../db/repositories/SubscriptionReposi
 import { paymentTransactionRepository } from "../../db/repositories/PaymentTransactionRepository";
 import { userRepository } from "../../db/repositories/UserRepository";
 import { AppError } from "../../utils/appError";
-import { Paystack } from "../../config/env";
+import { AppEnv, Paystack } from "../../config/env";
 import { randomUUID } from "crypto";
 import { logger } from "../../utils/logger";
 import {
@@ -13,7 +13,11 @@ import {
 const TIER_PRICING_NGN: Record<PaidSubscriptionTier, number> = {
   basic: 6_800,
   pro: 9_500,
-  gold: 12_500,
+};
+
+const TIER_PLAN_CODES: Record<PaidSubscriptionTier, string | undefined> = {
+  basic: Paystack.BASIC_PLAN_CODE,
+  pro: Paystack.PRO_PLAN_CODE,
 };
 
 export interface PaystackWebhookEvent {
@@ -21,6 +25,8 @@ export interface PaystackWebhookEvent {
   data: {
     customer?: { customer_code?: string };
     subscription_code?: string;
+    email_token?: string;
+    subscription?: { subscription_code?: string; email_token?: string };
     metadata?: { userId?: string; tier?: string };
   };
 }
@@ -40,9 +46,24 @@ export class PaymentService {
     if (!user?.email) throw new AppError(400, "An email address is required for payment");
     const reference = `askclo_${randomUUID()}`;
     const amountKobo = this.getSubscriptionPrice(tier) * 100;
+    const planCode = TIER_PLAN_CODES[tier];
+    if (!planCode) {
+      throw new AppError(503, `${tier === "basic" ? "Basic" : "Pro"} checkout is not configured`);
+    }
+    await this.assertPaystackPlanMatches(tier, planCode, amountKobo);
+    const callbackUrl = AppEnv.APP_URL
+      ? `${AppEnv.APP_URL.replace(/\/$/, "")}/dashboard/subscription`
+      : undefined;
     const response = await fetch(`${Paystack.BASE_URL}/transaction/initialize`, {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${Paystack.SECRET_KEY}` },
-      body: JSON.stringify({ email: user.email, amount: amountKobo, reference, metadata: { userId, tier, reference } }),
+      body: JSON.stringify({
+        email: user.email,
+        amount: amountKobo,
+        reference,
+        plan: planCode,
+        ...(callbackUrl ? { callback_url: callbackUrl } : {}),
+        metadata: { userId, tier, reference },
+      }),
     });
     if (!response.ok) throw new AppError(502, "Unable to initialize payment");
     const result = await response.json() as { status: boolean; data?: { authorization_url: string; access_code: string } };
@@ -51,10 +72,89 @@ export class PaymentService {
     return { reference, authorizationUrl: result.data.authorization_url, accessCode: result.data.access_code };
   }
 
-  async handleVerifiedPaystackEvent(event: PaystackWebhookEvent & { data: { reference?: string; amount?: number; status?: string; customer?: { customer_code?: string }; subscription_code?: string; metadata?: { userId?: string; tier?: string } } }): Promise<void> {
+  async verifyPaystackCheckout(userId: string, reference: string) {
+    if (!Paystack.SECRET_KEY) throw new AppError(503, "Paystack is not configured");
+    const transaction = await paymentTransactionRepository.findByReference(reference);
+    if (!transaction || transaction.user_id !== userId) {
+      throw new AppError(404, "Payment transaction not found");
+    }
+
+    const response = await fetch(
+      `${Paystack.BASE_URL}/transaction/verify/${encodeURIComponent(reference)}`,
+      { headers: { Authorization: `Bearer ${Paystack.SECRET_KEY}` } },
+    );
+    if (!response.ok) throw new AppError(502, "Unable to verify payment");
+    const result = await response.json() as {
+      status: boolean;
+      data?: {
+        reference?: string;
+        amount?: number;
+        status?: string;
+        customer?: { customer_code?: string };
+        subscription?: { subscription_code?: string; email_token?: string };
+        metadata?: { userId?: string; tier?: string };
+      };
+    };
+    if (!result.status || !result.data) throw new AppError(502, "Paystack returned an unusable verification response");
+
+    await this.handleVerifiedPaystackEvent({
+      event: "charge.success",
+      data: {
+        ...result.data,
+        subscription_code: result.data.subscription?.subscription_code,
+        email_token: result.data.subscription?.email_token,
+      },
+    });
+    const updated = await paymentTransactionRepository.findByReference(reference);
+    if (updated?.status !== "successful") throw new AppError(400, "Payment was not successful");
+
+    return {
+      transaction: updated,
+      subscription: await subscriptionService.getSubscriptionOverview(userId),
+    };
+  }
+
+  async handleVerifiedPaystackEvent(event: PaystackWebhookEvent & { data: { reference?: string; amount?: number; status?: string; customer?: { customer_code?: string }; subscription_code?: string; email_token?: string; subscription?: { subscription_code?: string; email_token?: string }; metadata?: { userId?: string; tier?: string } } }): Promise<void> {
+    const subscriptionCode = event.data.subscription_code ?? event.data.subscription?.subscription_code;
+    const emailToken = event.data.email_token ?? event.data.subscription?.email_token;
+    if (event.event === "subscription.create") {
+      const { userId, tier } = event.data.metadata ?? {};
+      const subscription = userId && this.isPaidTier(tier)
+        ? await subscriptionRepository.findByUserId(userId)
+        : event.data.customer?.customer_code
+          ? await subscriptionRepository.findByPaystackCustomerId(event.data.customer.customer_code)
+          : undefined;
+      if (subscription) {
+        await subscriptionRepository.updateById(subscription.id, {
+          paystack_customer_id: event.data.customer?.customer_code,
+          paystack_subscription_code: subscriptionCode,
+          paystack_email_token: emailToken,
+        });
+      }
+      return;
+    }
+
     const reference = event.data.reference;
     if (!reference) { logger.warn({ event: event.event }, "Paystack webhook missing reference"); return; }
     const transaction = await paymentTransactionRepository.findByReference(reference);
+    if (!transaction && event.event === "charge.success" && event.data.status === "success" && subscriptionCode) {
+      const recurringSubscription = await subscriptionRepository.findByPaystackSubscriptionCode(subscriptionCode);
+      if (!recurringSubscription || event.data.amount !== this.getSubscriptionPrice(recurringSubscription.tier as PaidSubscriptionTier) * 100) {
+        logger.warn({ reference, subscriptionCode }, "Recurring Paystack charge did not match a subscription");
+        return;
+      }
+      await subscriptionService.activatePaidTier(recurringSubscription.user_id, recurringSubscription.tier as PaidSubscriptionTier);
+      await paymentTransactionRepository.create({
+        user_id: recurringSubscription.user_id,
+        provider: "paystack",
+        reference,
+        tier: recurringSubscription.tier as PaidSubscriptionTier,
+        amount_kobo: event.data.amount,
+        status: "successful",
+        provider_payload: event as unknown as Record<string, unknown>,
+      });
+      return;
+    }
     if (!transaction) { logger.warn({ reference }, "Paystack webhook did not match a payment transaction"); return; }
     if (transaction.status === "successful") return;
     if (event.event !== "charge.success" || event.data.status !== "success" || event.data.amount !== transaction.amount_kobo) {
@@ -64,7 +164,11 @@ export class PaymentService {
     await subscriptionService.activatePaidTier(transaction.user_id, transaction.tier);
     await paymentTransactionRepository.updateById(transaction.id, { status: "successful", provider_payload: event as unknown as Record<string, unknown> });
     const subscription = await subscriptionRepository.findByUserId(transaction.user_id);
-    if (subscription) await subscriptionRepository.updateById(subscription.id, { paystack_customer_id: event.data.customer?.customer_code, paystack_subscription_code: event.data.subscription_code });
+    if (subscription) await subscriptionRepository.updateById(subscription.id, {
+      paystack_customer_id: event.data.customer?.customer_code,
+      paystack_subscription_code: subscriptionCode,
+      paystack_email_token: emailToken,
+    });
   }
 
   async handlePaystackWebhook(event: PaystackWebhookEvent): Promise<void> {
@@ -95,7 +199,35 @@ export class PaymentService {
   }
 
   private isPaidTier(tier: string | undefined): tier is PaidSubscriptionTier {
-    return tier === "basic" || tier === "pro" || tier === "gold";
+    return tier === "basic" || tier === "pro";
+  }
+
+  private async assertPaystackPlanMatches(
+    tier: PaidSubscriptionTier,
+    planCode: string,
+    expectedAmountKobo: number,
+  ): Promise<void> {
+    const response = await fetch(`${Paystack.BASE_URL}/plan/${encodeURIComponent(planCode)}`, {
+      headers: { Authorization: `Bearer ${Paystack.SECRET_KEY}` },
+    });
+    if (!response.ok) {
+      throw new AppError(502, `Unable to validate the ${tier} payment plan`);
+    }
+    const result = await response.json() as {
+      status: boolean;
+      data?: { amount?: number; interval?: string };
+    };
+    if (
+      !result.status ||
+      result.data?.amount !== expectedAmountKobo ||
+      result.data.interval !== "monthly"
+    ) {
+      logger.error(
+        { tier, planCode, expectedAmountKobo, configuredPlan: result.data },
+        "Paystack plan configuration mismatch",
+      );
+      throw new AppError(503, `${tier === "basic" ? "Basic" : "Pro"} payment plan is misconfigured`);
+    }
   }
 }
 

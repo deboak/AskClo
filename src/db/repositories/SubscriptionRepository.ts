@@ -19,6 +19,14 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionModel> {
     return this.findOne({ user_id: userId, status: "active" }, options);
   }
 
+  async findByPaystackSubscriptionCode(subscriptionCode: string) {
+    return this.findOne({ paystack_subscription_code: subscriptionCode });
+  }
+
+  async findByPaystackCustomerId(customerId: string) {
+    return this.findOne({ paystack_customer_id: customerId });
+  }
+
   async createInTrx(
     data: Partial<SubscriptionModel>,
     trx: Transaction,
