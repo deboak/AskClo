@@ -65,7 +65,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <h3>Your try-on photo</h3>
-              <p>Used only for own-photo try-ons on Pro and Gold.</p>
+              <p>Used only for own-photo try-ons on Pro.</p>
               <button type="button" onClick={() => fileRef.current?.click()}>
                 Upload photo
               </button>

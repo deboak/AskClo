@@ -147,10 +147,10 @@ export class GenerationService {
       return imageUrl;
     }
 
-    if (tier !== "pro" && tier !== "gold") {
+    if (tier !== "pro") {
       throw new AppError(
         403,
-        "Using your own photo is available on Pro and Gold plans",
+        "Using your own photo is available on the Pro plan",
       );
     }
     const profile = await profileRepository.findByUserId(userId);

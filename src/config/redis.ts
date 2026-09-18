@@ -7,6 +7,14 @@ const REDIS_URL = AppEnv.REDIS_URL ?? 'redis://localhost:6379';
 export const redis = new Redis(REDIS_URL, {
   maxRetriesPerRequest: null, // required by BullMQ
   enableReadyCheck: false,
+  retryStrategy(attempt) {
+    if (attempt >= 3) {
+      logger.error({ attempts: attempt }, "Redis connection stopped after 3 failed attempts");
+      return null;
+    }
+
+    return attempt * 500;
+  },
 });
 
 redis.on('error', (err) => {

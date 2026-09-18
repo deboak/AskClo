@@ -6,4 +6,5 @@ import { initializeCheckoutSchema } from "./payment.validator";
 const paymentRouter = Router();
 paymentRouter.post("/paystack/webhook", paymentController.webhook);
 paymentRouter.post("/checkout", auth, validate(initializeCheckoutSchema), paymentController.initialize);
+paymentRouter.get("/verify/:reference", auth, paymentController.verify);
 export default paymentRouter;

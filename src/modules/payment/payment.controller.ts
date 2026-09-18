@@ -7,11 +7,23 @@ import { paymentService } from "./payment.service";
 
 export const paymentController = {
   initialize: async (req: Request, res: Response, next: NextFunction) => { try { sendSuccess(res, await paymentService.initializePaystackCheckout(req.user.sub, req.body.tier)); } catch (error) { next(error); } },
+  verify: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      sendSuccess(
+        res,
+        await paymentService.verifyPaystackCheckout(req.user.sub, String(req.params.reference)),
+        { message: "Payment verified successfully" },
+      );
+    } catch (error) {
+      next(error);
+    }
+  },
   webhook: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!Paystack.WEBHOOK_SECRET) throw new AppError(503, "Paystack webhook is not configured");
+      const webhookSecret = Paystack.WEBHOOK_SECRET || Paystack.SECRET_KEY;
+      if (!webhookSecret) throw new AppError(503, "Paystack webhook is not configured");
       const signature = String(req.headers["x-paystack-signature"] ?? "");
-      const expected = createHmac("sha512", Paystack.WEBHOOK_SECRET).update(req.body as Buffer).digest("hex");
+      const expected = createHmac("sha512", webhookSecret).update(req.body as Buffer).digest("hex");
       if (!signature || signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) throw new AppError(401, "Invalid Paystack webhook signature");
       await paymentService.handleVerifiedPaystackEvent(JSON.parse((req.body as Buffer).toString("utf8")));
       res.sendStatus(200);
