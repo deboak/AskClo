@@ -10,6 +10,7 @@ import { AppEnv } from "./config/env";
 
 
 const app = express();
+app.set("trust proxy", 1);
 
 const allowedOrigins = (AppEnv.ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()).filter(Boolean);
 app.use(cors({ origin: allowedOrigins.length ? allowedOrigins : false }));

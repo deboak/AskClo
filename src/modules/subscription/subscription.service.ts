@@ -21,7 +21,7 @@ const TIER_ENTITLEMENTS: Record<
 > = {
   free_trial: {
     genericTryOn: true,
-    ownPhotoTryOn: false,
+    ownPhotoTryOn: true,
     freeGenerationLimit: 2,
     monthlyGenerationLimit: null,
   },
@@ -66,6 +66,19 @@ export class SubscriptionService {
       },
       trx,
     );
+  }
+
+  async createIneligibleFreeTrialSubscription(userId: string, trx: Transaction) {
+    const existing = await this.subscriptionRepo.findByUserId(userId);
+    if (existing) return existing;
+    const now = new Date().toISOString();
+    return this.subscriptionRepo.createInTrx({
+      user_id: userId,
+      tier: "free_trial",
+      status: "expired",
+      current_period_start: now,
+      current_period_end: now,
+    }, trx);
   }
 
   async getActiveSubscription(userId: string) {

@@ -25,6 +25,17 @@
   width: 22px;
   font-size: 18px;
 }
+
+.dashboardNav nav a i svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .dashboardNav nav a:hover,
 .dashboardNav nav a.active {
   border: 0;
@@ -2599,6 +2610,16 @@
   white-space: nowrap;
 }
 
+.tryOnSourceNote {
+  border: 1px solid rgba(17, 24, 52, 0.12);
+  border-radius: 14px;
+  background: rgba(17, 24, 52, 0.04);
+  color: #555968;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  padding: 12px 14px;
+}
+
 @media (max-width: 430px) {
   .readyTryOnCard {
     grid-template-columns: 34px minmax(0, 1fr);
@@ -3014,4 +3035,30 @@
 .conversationItems > button > i {
   background: rgba(255, 255, 255, 0.1);
   color: #f1d48c;
+}
+
+.conversationList .conversationItems {
+  padding-right: 8px !important;
+  padding-left: 8px !important;
+}
+
+@media (min-width: 851px) {
+  .dashChat:not(.chatsCollapsed) .historyToggle {
+    display: none !important;
+  }
+
+  .dashChat:not(.chatsCollapsed) .historyClose {
+    width: 34px;
+    height: 34px;
+    display: grid !important;
+    place-items: center;
+    padding: 0;
+    margin: 0;
+    border: 0 !important;
+    border-radius: 50%;
+    background: rgba(18, 20, 26, 0.08) !important;
+    color: #55575e !important;
+    font-size: 21px;
+    line-height: 1;
+  }
 }

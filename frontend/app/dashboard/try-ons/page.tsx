@@ -12,6 +12,7 @@ export default function TryOnsPage() {
     [plan, setPlan] = useState<SubscriptionOverview | null>(null),
     [creating, setCreating] = useState(false),
     [showForm, setShowForm] = useState(false),
+    [garmentSource, setGarmentSource] = useState<"ai" | "wardrobe">("wardrobe"),
     [selectedImage, setSelectedImage] = useState<string | null>(null),
     [error, setError] = useState("");
   const load = useCallback(
@@ -22,7 +23,8 @@ export default function TryOnsPage() {
     [],
   );
   useEffect(() => {
-    setShowForm(Boolean(params.get("garment")));
+    setShowForm(Boolean(params.get("garment") || params.get("prompt")));
+    setGarmentSource(params.get("source") === "ai" ? "ai" : "wardrobe");
     void Promise.all([
       api<Generation[]>("/generations"),
       api<Garment[]>("/garments"),
@@ -61,7 +63,8 @@ export default function TryOnsPage() {
         method: "POST",
         body: JSON.stringify({
           type,
-          garmentId: d.get("garmentId"),
+          garmentId: garmentSource === "wardrobe" ? d.get("garmentId") : undefined,
+          generateGarment: garmentSource === "ai",
           genericModelGender: type === "generic_model" ? d.get("genericModelGender") : undefined,
           prompt: d.get("prompt") || undefined,
         }),
@@ -134,7 +137,7 @@ export default function TryOnsPage() {
         <div className="emptyDash large">
           <span>◎</span>
           <h3>No try-ons yet</h3>
-          <p>Add a piece to your wardrobe, then visualise it on a model or your own photo.</p>
+          <p>Generate Clo&apos;s recommended outfit or visualise a wardrobe piece on a model.</p>
           <button onClick={() => setShowForm(true)}>Create your first try-on</button>
         </div>
       )}
@@ -146,13 +149,23 @@ export default function TryOnsPage() {
             </button>
             <span className="dashEyebrow">New visualisation</span>
             <h2>Create a try-on</h2>
-            <p>Choose a wardrobe piece and how you&apos;d like to see it.</p>
-            {!garments.length ? (
-              <div className="formError">
-                Add a garment to your wardrobe before creating a try-on.
-              </div>
-            ) : (
-              <>
+            <p>Use Clo&apos;s recommended look or choose a piece from your wardrobe.</p>
+            <>
+                <label>
+                  Garment source
+                  <select
+                    value={garmentSource}
+                    onChange={(event) => setGarmentSource(event.target.value as "ai" | "wardrobe")}
+                  >
+                    <option value="ai">Generate Clo&apos;s outfit with AI</option>
+                    <option value="wardrobe">Choose from my wardrobe</option>
+                  </select>
+                </label>
+                {garmentSource === "ai" ? (
+                  <div className="tryOnSourceNote">
+                    Clo will first create the garment from the styling direction, then place it on your selected model.
+                  </div>
+                ) : garments.length ? (
                 <label>
                   Garment
                   <select required name="garmentId" defaultValue={params.get("garment") ?? ""}>
@@ -166,6 +179,9 @@ export default function TryOnsPage() {
                     ))}
                   </select>
                 </label>
+                ) : (
+                  <div className="formError">Add a garment to your wardrobe or use Clo&apos;s AI outfit.</div>
+                )}
                 <label>
                   Try-on type
                   <select name="type" defaultValue="generic_model">
@@ -186,18 +202,22 @@ export default function TryOnsPage() {
                   </select>
                 </label>
                 <label>
-                  Styling direction <span>(optional)</span>
+                  Styling direction {garmentSource === "wardrobe" && <span>(optional)</span>}
                   <textarea
                     name="prompt"
+                    required={garmentSource === "ai"}
                     maxLength={2000}
+                    defaultValue={params.get("prompt")?.slice(0, 2000) ?? ""}
                     placeholder="e.g. Style it for an evening wedding with understated gold accessories"
                   />
                 </label>
-                <button className="goldAction" disabled={creating}>
+                <button
+                  className="goldAction"
+                  disabled={creating || (garmentSource === "wardrobe" && !garments.length)}
+                >
                   {creating ? "Starting generation…" : "Generate try-on"}
                 </button>
               </>
-            )}
           </form>
         </div>
       )}

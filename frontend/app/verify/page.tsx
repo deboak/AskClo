@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Brand } from "@/components/brand";
 import { Arrow } from "@/components/icons";
 import { api, AuthData, setSession } from "@/lib/api";
+import { getDeviceId } from "@/lib/device-id";
+import { Turnstile } from "@/components/turnstile";
 
 export default function VerifyPage() {
   const router = useRouter();
@@ -13,6 +15,7 @@ export default function VerifyPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
   useEffect(() => {
     setPhone(sessionStorage.getItem("askclo_phone") ?? "");
   }, []);
@@ -24,7 +27,7 @@ export default function VerifyPage() {
     try {
       const session = await api<AuthData>("/auth/verify", {
         method: "POST",
-        body: JSON.stringify({ method: "phone", phone_number: phone, code: data.get("code") }),
+        body: JSON.stringify({ method: "phone", phone_number: phone, code: data.get("code"), deviceId: getDeviceId() }),
       });
       setSession(session);
       router.push("/onboarding");
@@ -36,7 +39,7 @@ export default function VerifyPage() {
   }
   async function resend() {
     try {
-      await api("/auth/resend-otp", { method: "POST" });
+      await api("/auth/resend-otp", { method: "POST", body: JSON.stringify({ captchaToken }) });
       setSent(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not resend code");
@@ -76,7 +79,8 @@ export default function VerifyPage() {
             </>
           )}
         </button>
-        <button type="button" className="resendButton" onClick={resend}>
+        <Turnstile onToken={setCaptchaToken} />
+        <button type="button" className="resendButton" onClick={resend} disabled={Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) && !captchaToken}>
           {sent ? "A fresh code is on its way" : "Didn't receive it? Send again"}
         </button>
         <Link href="/register" className="forgotLink">

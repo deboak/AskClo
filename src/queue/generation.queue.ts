@@ -4,7 +4,8 @@ export interface GenerationJobData {
   generationId: string;
   prompt: string;
   inputImageUrl: string;
-  garmentImageUrl: string;
+  garmentImageUrl?: string;
+  generateGarment: boolean;
   garmentCategory: "tops" | "bottoms" | "one-pieces" | "auto";
 }
 

@@ -11,7 +11,8 @@ import { db } from "../../config/db";
 export interface RequestGenerationInput {
   type: GenerationType;
   prompt?: string;
-  garmentId: string;
+  garmentId?: string;
+  generateGarment?: boolean;
   genericModelGender?: "male" | "female";
 }
 
@@ -35,9 +36,14 @@ export class GenerationService {
 
     const [profile, garment] = await Promise.all([
       profileRepository.findByUserId(userId),
-      garmentRepository.findByIdAndUserId(input.garmentId, userId),
+      input.garmentId
+        ? garmentRepository.findByIdAndUserId(input.garmentId, userId)
+        : Promise.resolve(undefined),
     ]);
-    if (!garment) throw new AppError(404, "Garment not found");
+    if (!input.generateGarment && !garment) throw new AppError(404, "Garment not found");
+    if (input.generateGarment && !input.prompt?.trim()) {
+      throw new AppError(400, "A styling description is required to generate the garment");
+    }
     const inputImageUrl = await this.resolveModelImage(
       userId,
       input.type,
@@ -83,7 +89,7 @@ export class GenerationService {
           type: input.type,
           status: "pending",
           input_image_url: inputImageUrl,
-          garment_image_url: garment.image_url,
+          garment_image_url: garment?.image_url ?? null,
           prompt: input.prompt?.trim() || null,
         },
         trx,
@@ -94,11 +100,12 @@ export class GenerationService {
       generationId: generation.id,
       prompt: generation.prompt ?? "",
       inputImageUrl,
-      garmentImageUrl: garment.image_url,
+      garmentImageUrl: garment?.image_url,
+      generateGarment: Boolean(input.generateGarment),
       garmentCategory:
-        garment.category === "tops" ||
-        garment.category === "bottoms" ||
-        garment.category === "one-pieces"
+        garment?.category === "tops" ||
+        garment?.category === "bottoms" ||
+        garment?.category === "one-pieces"
           ? garment.category
           : "auto",
     });
@@ -147,10 +154,10 @@ export class GenerationService {
       return imageUrl;
     }
 
-    if (tier !== "pro") {
+    if (tier !== "free_trial" && tier !== "pro") {
       throw new AppError(
         403,
-        "Using your own photo is available on the Pro plan",
+        "Using your own photo is available during the free trial and on the Pro plan",
       );
     }
     const profile = await profileRepository.findByUserId(userId);

@@ -4,17 +4,19 @@ import Link from "next/link";
 import { Brand } from "@/components/brand";
 import { Arrow } from "@/components/icons";
 import { api } from "@/lib/api";
+import { Turnstile } from "@/components/turnstile";
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [stage, setStage] = useState<"request" | "reset" | "done">("request");
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
   async function request(e: FormEvent) {
     e.preventDefault();
     setError("");
     try {
       await api("/auth/password-reset/request", {
         method: "POST",
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, captchaToken }),
       });
       setStage("reset");
     } catch (e) {
@@ -92,7 +94,11 @@ export default function ForgotPassword() {
                 </label>
               </>
             )}
-            <button className="submitButton">
+            {stage === "request" && <Turnstile onToken={setCaptchaToken} />}
+            <button
+              className="submitButton"
+              disabled={stage === "request" && Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) && !captchaToken}
+            >
               Continue <Arrow />
             </button>
             <Link href="/login" className="forgotLink">
