@@ -36,7 +36,7 @@ export default function DashboardChat() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [chatsCollapsed, setChatsCollapsed] = useState(false);
+  const [chatsCollapsed, setChatsCollapsed] = useState(true);
   const [plan, setPlan] = useState<SubscriptionOverview | null>(null);
   const [generations, setGenerations] = useState<Generation[]>([]);
   const scrollArea = useRef<HTMLDivElement>(null);
@@ -102,6 +102,14 @@ export default function DashboardChat() {
       return;
     }
     setChatsCollapsed((collapsed) => !collapsed);
+  }
+
+  function closeChats() {
+    if (window.matchMedia("(max-width: 850px)").matches) {
+      setHistoryOpen(false);
+      return;
+    }
+    setChatsCollapsed(true);
   }
 
   async function sendMessage(content: string) {
@@ -186,7 +194,7 @@ export default function DashboardChat() {
           </div>
           <button
             className="historyClose"
-            onClick={() => setHistoryOpen(false)}
+            onClick={closeChats}
             aria-label="Close conversations"
           >
             ×
@@ -257,18 +265,31 @@ export default function DashboardChat() {
                           })
                         : ""}
                     </time>
-                    {ready && canGenerateTryOn && message.id === latestAssistantId && (
+                    {ready && message.id === latestAssistantId && (
                       <div className="readyTryOnCard">
                         <span aria-hidden="true">✓</span>
                         <div>
-                          <strong>Your look is ready to generate</strong>
+                          <strong>{canGenerateTryOn ? "Your look is ready to generate" : "Your try-on allowance is used"}</strong>
                           <p>
-                            {generationLimit === null || generationLimit === undefined
+                            {!plan?.isActive
+                              ? "Choose a plan to generate this look."
+                              : !canGenerateTryOn
+                                ? plan.subscription.tier === "free_trial"
+                                  ? "You have used both free try-ons. Upgrade to continue."
+                                  : "Your monthly try-on allowance has been used."
+                              : generationLimit === null || generationLimit === undefined
                               ? "Your plan includes virtual try-ons."
                               : `${Math.max(0, generationLimit - usedGenerations)} try-on${generationLimit - usedGenerations === 1 ? "" : "s"} remaining.`}
                           </p>
                         </div>
-                        <Link href="/dashboard/try-ons">Create try-on</Link>
+                        <Link
+                          href={{
+                            pathname: canGenerateTryOn ? "/dashboard/try-ons" : "/dashboard/subscription",
+                            query: canGenerateTryOn ? { prompt: message.content.slice(0, 2000), source: "ai" } : undefined,
+                          }}
+                        >
+                          {canGenerateTryOn ? "Create try-on" : "View plans"}
+                        </Link>
                       </div>
                     )}
                   </div>

@@ -8,12 +8,12 @@ import { api, getSession, setSession, type User } from "@/lib/api";
 import { useSafeEffect as useEffect } from "@/lib/use-safe-effect";
 
 const links = [
-  ["/dashboard", "⌂", "Overview"],
-  ["/dashboard/chat", "✦", "Style with Clo"],
-  ["/dashboard/wardrobe", "◇", "My wardrobe"],
-  ["/dashboard/try-ons", "◎", "Try-ons"],
-  ["/dashboard/subscription", "◈", "Plan & billing"],
-  ["/dashboard/profile", "○", "Style profile"],
+  ["/dashboard", "home", "Overview"],
+  ["/dashboard/chat", "chat", "Style with Clo"],
+  ["/dashboard/wardrobe", "wardrobe", "My wardrobe"],
+  ["/dashboard/try-ons", "tryon", "Try-ons"],
+  ["/dashboard/subscription", "billing", "Plan & billing"],
+  ["/dashboard/profile", "profile", "Style profile"],
 ];
 
 const mobileLinks = [
@@ -24,7 +24,7 @@ const mobileLinks = [
   ["/dashboard/profile", "Profile", "profile"],
 ];
 
-function MobileNavIcon({ name }: { name: string }) {
+function DashboardNavIcon({ name }: { name: string }) {
   const paths: Record<string, React.ReactNode> = {
     home: (
       <>
@@ -48,6 +48,12 @@ function MobileNavIcon({ name }: { name: string }) {
       <>
         <path d="M9 4a3 3 0 0 1 6 0c0 1.8-3 2.1-3 4" />
         <path d="m12 8-8 5 2 3 2-1v6h8v-6l2 1 2-3Z" />
+      </>
+    ),
+    billing: (
+      <>
+        <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
+        <path d="M3.5 9h17M7 15h4" />
       </>
     ),
     profile: (
@@ -128,7 +134,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               onClick={() => setOpen(false)}
               className={path === href ? "active" : ""}
             >
-              <i>{icon}</i>
+              <i>
+                <DashboardNavIcon name={icon} />
+              </i>
               <span>{label}</span>
             </Link>
           ))}
@@ -181,7 +189,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           const selected = path === href;
           return (
             <Link key={href} href={href} className={selected ? "active" : ""}>
-              <MobileNavIcon name={icon} />
+              <DashboardNavIcon name={icon} />
               <span>{label}</span>
             </Link>
           );

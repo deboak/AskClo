@@ -20,6 +20,7 @@ import { redis } from "../../config/redis";
 import { queueOtpJob } from "../../queue/jobs/otp";
 import { queueNotificationJob } from "../../queue/jobs/notification";
 import { profileRepository } from "../../db/repositories/ProfileRepository";
+import { assertAcceptableEmail, claimFreeTrial } from "./antiAbuse.service";
 
 const PASSWORD_SALT_ROUNDS = 12;
 
@@ -29,6 +30,8 @@ export interface RegisterInput {
   email: string;
   phone_number: string;
   password: string;
+  deviceId: string;
+  captchaToken?: string;
 }
 
 export interface LoginInput {
@@ -78,6 +81,7 @@ export class AuthService {
 
   async register(input: RegisterInput) {
     const email = input.email.trim().toLowerCase();
+    assertAcceptableEmail(email);
     const phoneNumber = normalizeNigerianPhoneNumber(input.phone_number).e164;
 
     const [emailInUse, phoneInUse] = await Promise.all([
@@ -176,6 +180,8 @@ export class AuthService {
     method: VerificationMethod,
     code: string,
     identifier: { email?: string; phone_number?: string },
+    deviceId: string,
+    ip: string,
   ) {
     const user =
       method === "email"
@@ -200,7 +206,9 @@ export class AuthService {
       );
 
       if (method === "phone") {
-        await subscriptionService.createFreeTrialSubscription(userId, trx);
+        const eligible = await claimFreeTrial(userId, deviceId, ip, trx);
+        if (eligible) await subscriptionService.createFreeTrialSubscription(userId, trx);
+        else await subscriptionService.createIneligibleFreeTrialSubscription(userId, trx);
       }
 
       return verifiedUser;

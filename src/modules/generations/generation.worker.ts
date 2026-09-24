@@ -8,8 +8,10 @@ import { logger } from "../../utils/logger";
 import { copyRemoteImageToR2 } from "../../utils/r2";
 
 const FASHN_MODEL_ID = "fal-ai/fashn/tryon/v1.6";
+const GARMENT_MODEL_ID = "fal-ai/flux/schnell";
 // FASHN v1.6 is currently listed at the same per-generation price across quality modes.
 const PERFORMANCE_COST_ESTIMATE_USD = 0.075;
+const GARMENT_COST_ESTIMATE_USD = 0.003;
 
 function configuredSpendCap(): number | null {
   const value = Number(AppEnv.MAX_DAILY_GENERATION_SPEND_USD);
@@ -42,7 +44,8 @@ async function reserveDailySpend(costUsd: number): Promise<boolean> {
 
 export function startGenerationWorker() {
   return createWorker<GenerationJobData>("generation", async (job) => {
-    const { generationId, inputImageUrl, garmentImageUrl, garmentCategory = "auto" } = job.data;
+    const { generationId, inputImageUrl, generateGarment, prompt, garmentCategory = "auto" } = job.data;
+    let garmentImageUrl = job.data.garmentImageUrl;
     await generationRepository.updateStatus(generationId, "processing");
 
     try {
@@ -50,13 +53,32 @@ export function startGenerationWorker() {
         throw new Error("FAL_KEY is not configured");
       }
 
-      if (!(await reserveDailySpend(PERFORMANCE_COST_ESTIMATE_USD))) {
-        logger.warn({ generationId, estimatedCostUsd: PERFORMANCE_COST_ESTIMATE_USD }, "Generation skipped because daily spend cap would be exceeded");
+      const estimatedCost = PERFORMANCE_COST_ESTIMATE_USD + (generateGarment ? GARMENT_COST_ESTIMATE_USD : 0);
+      if (!(await reserveDailySpend(estimatedCost))) {
+        logger.warn({ generationId, estimatedCostUsd: estimatedCost }, "Generation skipped because daily spend cap would be exceeded");
         await generationRepository.updateStatus(generationId, "failed");
         return;
       }
 
       fal.config({ credentials: AppEnv.FAL_KEY });
+      if (generateGarment) {
+        const garmentResult = await fal.subscribe(GARMENT_MODEL_ID, {
+          input: {
+            prompt: `Professional ecommerce flat-lay product photograph of the complete wearable outfit described below. Show only the clothing, neatly arranged and fully visible, front view, centered on a plain white background, no person, no mannequin, no accessories outside the described outfit, no text, no watermark. Outfit description: ${prompt}`,
+            image_size: "portrait_4_3",
+            num_images: 1,
+            output_format: "png",
+            enable_safety_checker: true,
+          },
+        });
+        const remoteGarmentUrl = garmentResult.data.images[0]?.url;
+        if (!remoteGarmentUrl) throw new Error("Garment generator returned no image");
+        garmentImageUrl = await copyRemoteImageToR2(remoteGarmentUrl, `generated-garments/${generationId}.png`);
+        await generationRepository.updateStatus(generationId, "processing", {
+          garment_image_url: garmentImageUrl,
+        });
+      }
+      if (!garmentImageUrl) throw new Error("No garment image is available for the try-on");
       const result = await fal.subscribe(FASHN_MODEL_ID, {
         input: {
           model_image: inputImageUrl,
@@ -78,7 +100,7 @@ export function startGenerationWorker() {
         output_image_url: outputImageUrl,
         provider: "fal",
         provider_job_id: result.requestId,
-        cost_usd: PERFORMANCE_COST_ESTIMATE_USD.toFixed(4),
+        cost_usd: estimatedCost.toFixed(4),
       });
     } catch (error) {
       await generationRepository.updateStatus(generationId, "failed");

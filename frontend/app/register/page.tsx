@@ -5,18 +5,21 @@ import { useRouter } from "next/navigation";
 import { Brand } from "@/components/brand";
 import { Arrow } from "@/components/icons";
 import { api, AuthData, setSession } from "@/lib/api";
+import { getDeviceId } from "@/lib/device-id";
+import { Turnstile } from "@/components/turnstile";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError("");
     const data = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(data);
+    const payload = { ...Object.fromEntries(data), deviceId: getDeviceId(), captchaToken };
 
     try {
       const session = await api<AuthData>("/auth/register", {
@@ -24,7 +27,7 @@ export default function RegisterPage() {
         body: JSON.stringify(payload),
       });
       setSession(session);
-      sessionStorage.setItem("askclo_phone", String(payload.phone_number));
+      sessionStorage.setItem("askclo_phone", String(data.get("phone_number") ?? ""));
       router.push("/verify");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Could not create your account");
@@ -90,7 +93,9 @@ export default function RegisterPage() {
             />
           </label>
 
-          <button className="submitButton" disabled={loading}>
+          <Turnstile onToken={setCaptchaToken} />
+
+          <button className="submitButton" disabled={loading || (Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) && !captchaToken)}>
             {loading ? (
               "Creating your wardrobe…"
             ) : (

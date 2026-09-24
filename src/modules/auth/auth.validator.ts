@@ -9,6 +9,8 @@ export const registerSchema = z.object({
     email: z.string().trim().email().transform((value) => value.toLowerCase()).optional(),
     phone_number: z.string().trim().min(7).max(30),
     password,
+    deviceId: z.string().trim().min(16).max(1_000),
+    captchaToken: z.string().trim().min(1).optional(),
   }),
 });
 
@@ -25,6 +27,7 @@ export const verifyContactSchema = z.object({
     code: z.string().regex(/^\d{6}$/, "Verification code must be 6 digits"),
     email: z.string().trim().email().transform((value) => value.toLowerCase()).optional(),
     phone_number: z.string().trim().min(7).max(30).optional(),
+    deviceId: z.string().trim().min(16).max(1_000),
   }).superRefine((value, context) => {
     const identifier = value.method === "email" ? value.email : value.phone_number;
     if (!identifier) {
@@ -34,5 +37,6 @@ export const verifyContactSchema = z.object({
 });
 
 export const refreshSchema = z.object({ body: z.object({ refresh_token: z.string().min(1) }) });
-export const requestPasswordResetSchema = z.object({ body: z.object({ email: z.string().trim().email().transform((value) => value.toLowerCase()) }) });
+export const captchaSchema = z.object({ body: z.object({ captchaToken: z.string().trim().min(1).optional() }) });
+export const requestPasswordResetSchema = z.object({ body: z.object({ email: z.string().trim().email().transform((value) => value.toLowerCase()), captchaToken: z.string().trim().min(1).optional() }) });
 export const resetPasswordSchema = z.object({ body: z.object({ email: z.string().trim().email().transform((value) => value.toLowerCase()), code: z.string().regex(/^\d{6}$/), password }) });

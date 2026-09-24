@@ -36,7 +36,12 @@ const plans = [
     name: "Free trial",
     price: "₦0",
     per: "7 days · 2 generations",
-    features: ["Unlimited styling conversations", "2 visual try-ons", "Personal style profile"],
+    features: [
+      "Unlimited styling conversations",
+      "2 visual try-ons with Pro features",
+      "Use your own photo",
+      "Personal style profile",
+    ],
     action: "Start for free",
   },
   {
