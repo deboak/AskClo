@@ -149,10 +149,12 @@
   background: linear-gradient(145deg, #17203c, #0f1529);
 }
 .dashSplit {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.34fr);
   gap: 20px;
   margin-top: 28px;
 }
 .dashSplit > div {
+  min-width: 0;
   border: 0;
   border-radius: 22px;
   padding: 28px;
@@ -170,6 +172,9 @@
 }
 .miniGallery {
   gap: 16px;
+}
+.miniGallery article {
+  min-width: 0;
 }
 .miniGallery article > div {
   height: 200px;
@@ -205,21 +210,43 @@
   font-size: 13px;
 }
 .cloPrompt {
-  border-radius: 26px;
-  padding: 34px;
-  box-shadow: 0 20px 55px rgba(161, 113, 22, 0.2);
+  min-width: 0;
+  align-self: start;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  padding: 30px;
+  background: linear-gradient(150deg, #18213d, #10162b);
+  color: #f7f5ef;
+  box-shadow: 0 16px 44px rgba(11, 16, 32, 0.14);
+}
+
+@media (min-width: 851px) and (max-width: 1120px) {
+  .dashSplit {
+    grid-template-columns: 1fr;
+  }
+
+  .cloPrompt {
+    width: 100%;
+  }
 }
 .cloPrompt > span {
   font-size: 10px;
+  color: #b9bdca;
 }
 .cloPrompt blockquote {
-  font-size: 34px;
+  margin: 34px 0 18px;
+  font-size: clamp(26px, 2.2vw, 31px);
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+  overflow-wrap: normal;
 }
 .cloPrompt p {
   font-size: 14px;
+  color: #aeb3c1;
 }
 .cloPrompt a {
   font-size: 13px;
+  color: #f7f5ef;
 }
 
 /* Forms and profile */
