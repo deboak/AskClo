@@ -95,6 +95,12 @@ export const SendGrid = {
   FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL,
 };
 
+export const Email = {
+  PROVIDER: (process.env.EMAIL_PROVIDER || (process.env.GMAIL_USER ? "gmail" : "sendgrid")).toLowerCase(),
+  GMAIL_USER: process.env.GMAIL_USER,
+  GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD,
+};
+
 const defaultProvider = (process.env.PAYMENT_DEFAULT_PROVIDER || "paystack").toLowerCase();
 const fallbackOrder = parseProviderList(process.env.PAYMENT_PROVIDER_PRIORITY);
 
@@ -118,5 +124,5 @@ export const Paystack = {
 export const WebPush = {
   VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
   VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
-  VAPID_SUBJECT: process.env.VAPID_SUBJECT || "mailto:devs@winitnaija.com",
+  VAPID_SUBJECT: process.env.VAPID_SUBJECT || "mailto:info@askclo.com",
 };

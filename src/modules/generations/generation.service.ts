@@ -98,6 +98,7 @@ export class GenerationService {
 
     await queueGenerationJob({
       generationId: generation.id,
+      userId,
       prompt: generation.prompt ?? "",
       inputImageUrl,
       garmentImageUrl: garment?.image_url,

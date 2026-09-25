@@ -1,0 +1,110 @@
+.legalPage {
+  min-height: 100vh;
+  background: #f7f5ef;
+  color: #151a2d;
+}
+.legalNav {
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(21, 26, 45, 0.09);
+}
+.legalNav > a:last-child {
+  font-size: 13px;
+  font-weight: 650;
+  color: #5e6270;
+}
+.legalHero {
+  padding: 64px 0 44px;
+  border-bottom: 1px solid rgba(21, 26, 45, 0.09);
+}
+.legalHero span {
+  font: 600 13px/1.4 var(--font-body);
+  letter-spacing: 0;
+  text-transform: none;
+  color: #777b85;
+}
+.legalHero h1 {
+  max-width: 850px;
+  margin: 16px 0 18px;
+  font: 550 clamp(44px, 6vw, 68px)/1 var(--font-display);
+  letter-spacing: -0.045em;
+}
+.legalHero p {
+  max-width: 720px;
+  color: #676b76;
+  font-size: 16px;
+  line-height: 1.75;
+}
+.legalContent {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 760px);
+  gap: 54px;
+  padding: 56px 0 90px;
+}
+.legalContents {
+  position: sticky;
+  top: 30px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.legalContents strong {
+  margin-bottom: 6px;
+  font: 700 10px var(--font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8b8e97;
+}
+.legalContents a {
+  font-size: 12px;
+  color: #666a75;
+}
+.legalArticle section {
+  scroll-margin-top: 30px;
+  margin-bottom: 40px;
+}
+.legalArticle h2 {
+  margin: 0 0 16px;
+  font: 600 27px/1.2 var(--font-display);
+}
+.legalArticle h3 {
+  margin: 24px 0 10px;
+  font-size: 15px;
+}
+.legalArticle p,
+.legalArticle li {
+  color: #555a67;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.legalArticle p {
+  margin: 0 0 14px;
+}
+.legalArticle ul {
+  margin: 12px 0 0;
+  padding-left: 20px;
+}
+.legalArticle li + li {
+  margin-top: 8px;
+}
+.legalNotice {
+  padding: 18px 20px;
+  border: 1px solid rgba(21, 26, 45, 0.1);
+  border-radius: 16px;
+  background: #fff;
+}
+.legalArticle a {
+  color: #765a17;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 760px) {
+  .legalNav { height: 70px; }
+  .legalHero { padding: 62px 0 38px; }
+  .legalContent { display: block; padding: 45px 0 80px; }
+  .legalContents { display: none; }
+  .legalArticle h2 { font-size: 27px; }
+}

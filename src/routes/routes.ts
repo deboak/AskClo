@@ -6,6 +6,7 @@ import generationRouter from "../modules/generations/generation.route";
 import profileRouter from "../modules/profile/profile.route";
 import garmentRouter from "../modules/garments/garment.route";
 import paymentRouter from "../modules/payment/payment.route";
+import notificationRouter from "../modules/notification/notification.route";
 
 const router = Router()
 
@@ -16,5 +17,6 @@ router.use("/generations", generationRouter);
 router.use("/profile", profileRouter);
 router.use("/garments", garmentRouter);
 router.use("/payments", paymentRouter);
+router.use("/notifications", notificationRouter);
 
 export default router;
