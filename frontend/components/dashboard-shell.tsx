@@ -14,6 +14,7 @@ const links = [
   ["/dashboard/try-ons", "tryon", "Try-ons"],
   ["/dashboard/subscription", "billing", "Plan & billing"],
   ["/dashboard/profile", "profile", "Style profile"],
+  ["/dashboard/settings", "settings", "Settings"],
 ];
 
 const mobileLinks = [
@@ -62,6 +63,12 @@ function DashboardNavIcon({ name }: { name: string }) {
         <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
       </>
     ),
+    settings: (
+      <>
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.86 2.86-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21H9.55v-.09A1.7 1.7 0 0 0 8.5 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.86-2.86.06-.06A1.7 1.7 0 0 0 4.1 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H2V9.55h.4A1.7 1.7 0 0 0 4.1 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06L6.56 3.7l.06.06A1.7 1.7 0 0 0 8.5 4.1a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V2h4.05v.4A1.7 1.7 0 0 0 15 4.1a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.86 2.86-.06.06A1.7 1.7 0 0 0 19.4 8.5a1.7 1.7 0 0 0 .6 1 1.7 1.7 0 0 0 1.1.4h.4v4.05h-.4A1.7 1.7 0 0 0 19.4 15Z" />
+      </>
+    ),
   };
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -75,7 +82,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   useEffect(() => {
     const session = getSession();
@@ -166,7 +173,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             title="Log out"
             aria-label="Log out"
           >
-            <span aria-hidden="true">↗</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9" />
+            </svg>
             <span className="logoutLabel">{loggingOut ? "Logging out…" : "Log out"}</span>
           </button>
         </div>

@@ -16,7 +16,7 @@ const looks = [
   {
     label: "Agbada",
     note: "Tradition, redefined",
-    src: "https://images.pexels.com/photos/29133978/pexels-photo-29133978.jpeg?auto=compress&cs=tinysrgb&w=800",
+    src: "https://images.pexels.com/photos/37320670/pexels-photo-37320670.jpeg?auto=compress&cs=tinysrgb&w=1200",
   },
   {
     label: "Streetwear",
@@ -410,15 +410,33 @@ export default function Home() {
           </div>
           <div>
             <strong>Say hello</strong>
-            <a href="mailto:hello@askclo.com">hello@askclo.com</a>
-            <span>@askclo</span>
+            <a className="footerContactLink" href="mailto:info@askclo.com">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path d="m4 7 8 6 8-6" />
+              </svg>
+              info@askclo.com
+            </a>
+            <a
+              className="footerContactLink"
+              href="https://www.instagram.com/askclo/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="5" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="17.5" cy="6.5" r="1" className="footerIconDot" />
+              </svg>
+              @askclo
+            </a>
           </div>
         </div>
         <div className="shell footerBottom">
-          <span>© 2026 AskClo. All style reserved.</span>
+          <span>© 2026 AskClo. All rights reserved.</span>
           <div>
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
           </div>
         </div>
       </footer>

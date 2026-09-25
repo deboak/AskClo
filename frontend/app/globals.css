@@ -21,7 +21,7 @@ body {
   margin: 0;
   background: var(--night);
   color: var(--ivory);
-  font-family: var(--font-body), sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
 button,
@@ -44,7 +44,7 @@ button {
   margin: auto;
 }
 .brand {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-display);
   font-size: 25px;
   font-weight: 600;
   letter-spacing: -0.04em;
@@ -55,7 +55,7 @@ button {
   color: var(--gold);
 }
 .brand i {
-  font-family: serif;
+  font-family: inherit;
   font-size: 8px;
   color: var(--gold);
   margin: 3px 0 0 4px;
@@ -661,6 +661,26 @@ footer {
   letter-spacing: 0.12em;
   color: var(--gold2);
   margin-bottom: 5px;
+}
+.footerContactLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+}
+.footerContactLink svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.footerContactLink .footerIconDot {
+  fill: currentColor;
+  stroke: none;
 }
 .footerBottom {
   display: flex;
@@ -1470,4 +1490,29 @@ footer {
     text-align: left;
     color: var(--gold2);
   }
+}
+html.reduceMotion *,
+html.reduceMotion *::before,
+html.reduceMotion *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+html.largerText {
+  font-size: 17px;
+}
+
+html.highContrast {
+  --muted: #50535d;
+}
+
+html.highContrast .dashboardBody {
+  color: #090d1d;
+}
+
+html.highContrast .settingsRows,
+html.highContrast .settingsSection {
+  border-color: rgba(11, 16, 32, 0.2);
 }

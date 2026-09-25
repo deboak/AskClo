@@ -104,7 +104,10 @@ export default function RegisterPage() {
               </>
             )}
           </button>
-          <small>By continuing, you agree to our Terms and Privacy Policy.</small>
+          <small>
+            By continuing, you agree to our <Link href="/terms">Terms</Link> and{" "}
+            <Link href="/privacy">Privacy Policy</Link>.
+          </small>
         </form>
       </section>
     </main>

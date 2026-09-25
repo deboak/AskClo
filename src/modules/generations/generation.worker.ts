@@ -6,6 +6,9 @@ import { createWorker } from "../../queue/createWorker";
 import type { GenerationJobData } from "../../queue/generation.queue";
 import { logger } from "../../utils/logger";
 import { copyRemoteImageToR2 } from "../../utils/r2";
+import { notificationPreferenceRepository } from "../../db/repositories/NotificationPreferenceRepository";
+import { userRepository } from "../../db/repositories/UserRepository";
+import { queueNotificationJob } from "../../queue/jobs/notification";
 
 const FASHN_MODEL_ID = "fal-ai/fashn/tryon/v1.6";
 const GARMENT_MODEL_ID = "fal-ai/flux/schnell";
@@ -44,7 +47,7 @@ async function reserveDailySpend(costUsd: number): Promise<boolean> {
 
 export function startGenerationWorker() {
   return createWorker<GenerationJobData>("generation", async (job) => {
-    const { generationId, inputImageUrl, generateGarment, prompt, garmentCategory = "auto" } = job.data;
+    const { generationId, userId, inputImageUrl, generateGarment, prompt, garmentCategory = "auto" } = job.data;
     let garmentImageUrl = job.data.garmentImageUrl;
     await generationRepository.updateStatus(generationId, "processing");
 
@@ -102,6 +105,30 @@ export function startGenerationWorker() {
         provider_job_id: result.requestId,
         cost_usd: estimatedCost.toFixed(4),
       });
+
+      try {
+        const [preferences, user] = await Promise.all([
+          notificationPreferenceRepository.findByUserId(userId),
+          userRepository.findById(userId),
+        ]);
+        if ((preferences?.try_on_alerts ?? true) && user?.email) {
+          const tryOnsUrl = AppEnv.APP_URL
+            ? `${AppEnv.APP_URL.replace(/\/$/, "")}/dashboard/try-ons`
+            : "Sign in to AskClo to view it.";
+          await queueNotificationJob({
+            userId,
+            channel: "email",
+            recipient: user.email,
+            title: "Your AskClo try-on is ready",
+            message: `Hi ${user.first_name},\n\nYour new AskClo try-on is ready to view. Open your Try-ons page to see the completed look.\n\n${tryOnsUrl}\n\n— AskClo`,
+          });
+        }
+      } catch (notificationError) {
+        logger.error(
+          { err: notificationError, generationId, userId },
+          "Unable to queue try-on notification",
+        );
+      }
     } catch (error) {
       await generationRepository.updateStatus(generationId, "failed");
       logger.error({ err: error, generationId, inputImageUrl, garmentImageUrl }, "Try-on generation failed");

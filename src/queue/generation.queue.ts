@@ -2,6 +2,7 @@ import { queueManager } from "./queueManager";
 
 export interface GenerationJobData {
   generationId: string;
+  userId: string;
   prompt: string;
   inputImageUrl: string;
   garmentImageUrl?: string;
