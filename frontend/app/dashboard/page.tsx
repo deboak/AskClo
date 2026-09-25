@@ -123,7 +123,7 @@ export default function DashboardPage() {
         <aside className="cloPrompt">
           <span>✦ A note from Clo</span>
           <blockquote>
-            “The best outfit starts with the way you want to <em>feel</em>.”
+            “The best outfit is the one that feels like <em>you</em>.”
           </blockquote>
           <p>Tell me about your next moment and we&apos;ll take it from there.</p>
           <Link href="/dashboard/chat">Start a conversation →</Link>

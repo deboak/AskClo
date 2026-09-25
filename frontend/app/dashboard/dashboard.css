@@ -138,13 +138,17 @@
   color: #8c909e;
 }
 .dashboardBody {
+  min-width: 0;
   height: 100vh;
-  overflow: auto;
+  overflow-x: clip;
+  overflow-y: auto;
 }
 .mobileDashHeader {
   display: none;
 }
 .dashPage {
+  box-sizing: border-box;
+  width: 100%;
   padding: 45px clamp(25px, 4vw, 65px) 70px;
   max-width: 1450px;
   margin: auto;
